@@ -96,49 +96,8 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     if (onSubmit) {
       onSubmit(formData)
     } else {
-<<<<<<< Updated upstream
       // Default behavior - navigate to trip result
       router.push("/trip/paris-3days-art-food")
-=======
-      // Call the Gemini API to get trip recommendations
-      try {
-        const response = await fetch('/api/trip-plan', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            destination: formData.destination,
-            budget: formData.budget,
-            preferences: formData.preferences,
-            mustSee: formData.mustSee,
-          }),
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`Failed to generate trip recommendations: ${response.status} ${errorText}`)
-          console.log(errorText);
-        }
-
-        const data = await response.json()
-        
-        if (data.success && data.recommendations) {
-          // Store the recommendations in localStorage or pass them to the next page
-          localStorage.setItem('tripRecommendations', JSON.stringify(data.recommendations))
-          localStorage.setItem('tripFormData', JSON.stringify(formData))
-          
-          // Navigate to a results page (you can create this page to display the recommendations)
-          router.push('/trip/results')
-        } else {
-          throw new Error(data.error || 'Failed to generate recommendations')
-        }
-      } catch (error) {
-        console.error('Error generating trip recommendations:', error)
-        // Fallback to the default navigation
-        router.push("/trip/paris-3days-art-food")
-      }
->>>>>>> Stashed changes
     }
   }
 

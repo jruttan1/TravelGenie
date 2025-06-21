@@ -11,10 +11,20 @@ export default function SunsetScrollIndicator() {
         }}
       />
       
-      {/* Scroll Arrow */}
+      {/* Sunset Scroll Arrow */}
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-        <div className="bg-white bg-opacity-20 backdrop-blur-sm border border-white border-opacity-30 p-4 rounded-full cursor-pointer hover:scale-110 transition-all duration-300 animate-bounce">
-          <ChevronDown className="h-6 w-6 text-white" />
+        <div 
+          className="p-4 rounded-full cursor-pointer hover:scale-110 transition-all duration-300 animate-bounce backdrop-blur-sm"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 154, 158, 0.8) 0%, rgba(255, 195, 160, 0.7) 50%, rgba(255, 175, 189, 0.8) 100%)',
+            border: '2px solid rgba(255, 175, 189, 0.4)',
+            boxShadow: '0 4px 20px rgba(255, 154, 158, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+          }}
+        >
+          <ChevronDown 
+            className="h-6 w-6 transition-colors duration-300" 
+            style={{ color: '#8B4513' }} 
+          />
         </div>
       </div>
     </div>

@@ -21,7 +21,6 @@ export default function Map3D({ points }: Map3DProps) {
   const markers = useRef<Marker[]>([]);
 
   const [is3DView, setIs3DView] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [mapStyleVersion, setMapStyleVersion] = useState(0); // Forces marker refresh
 
   // Initialize map
@@ -30,10 +29,8 @@ export default function Map3D({ points }: Map3DProps) {
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current!,
-      style: isDarkMode
-        ? 'mapbox://styles/mapbox/dark-v10'
-        : 'mapbox://styles/mapbox/streets-v11',
-      center: [-74.006, 40.7128],
+      style: 'mapbox://styles/mapbox/streets-v11', // Always light mode
+      center: [-74.006, 40.7128], // MAKE DYNAMIC
       zoom: 15,
       pitch: is3DView ? 60 : 0,
       bearing: is3DView ? -17.6 : 0,
@@ -61,16 +58,7 @@ export default function Map3D({ points }: Map3DProps) {
     });
   }, [is3DView]);
 
-  // Change style on dark mode toggle
-  useEffect(() => {
-    if (!map.current) return;
-
-    const styleUrl = isDarkMode
-      ? 'mapbox://styles/mapbox/dark-v10'
-      : 'mapbox://styles/mapbox/streets-v11';
-
-    map.current.setStyle(styleUrl);
-  }, [isDarkMode]);
+  // Light mode only - no style changes needed
 
   // Add markers whenever points or style version changes
   useEffect(() => {
@@ -145,18 +133,12 @@ export default function Map3D({ points }: Map3DProps) {
 
   return (
     <>
-      <div className="absolute top-4 left-4 z-20 flex space-x-2">
+      <div className="absolute top-4 left-4 z-20">
         <button
           onClick={() => setIs3DView(!is3DView)}
-          className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          className="px-1 py-1 modern-button text-white rounded-xl transition"
         >
-          {is3DView ? 'Bird’s-eye View' : '3D View'}
-        </button>
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition"
-        >
-          {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+          {is3DView ? '2D View' : '3D View'}
         </button>
       </div>
       <div ref={mapContainer} className="w-full h-screen" />
