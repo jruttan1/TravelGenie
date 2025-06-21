@@ -112,8 +112,8 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
         }
       } catch (error) {
         console.error('Error generating trip recommendations:', error)
-        // Fallback to the default navigation
-        router.push("/trip/paris-3days-art-food")
+        // Fallback to the error page
+        router.push("/trip/fallback")
       }
     }
   }
