@@ -14,20 +14,6 @@ export default function Home() {
         <div className="bokeh bokeh-6"></div>
       </div>
 
-      {/* Floating Decorative Elements */}
-      <div className="absolute top-10 left-10 glass-morphism p-4 rounded-xl float-animation">
-        <MapPin className="h-6 w-6 text-blue-500" />
-      </div>
-      <div className="absolute top-20 right-20 glass-morphism p-4 rounded-xl float-animation" style={{ animationDelay: '1s' }}>
-        <Sparkles className="h-6 w-6 text-indigo-500" />
-      </div>
-      <div className="absolute bottom-32 left-16 glass-morphism p-4 rounded-xl float-animation" style={{ animationDelay: '2s' }}>
-        <Plane className="h-6 w-6 text-emerald-500" />
-      </div>
-      <div className="absolute bottom-20 right-32 glass-morphism p-4 rounded-xl float-animation" style={{ animationDelay: '3s' }}>
-        <Star className="h-6 w-6 text-cyan-500" />
-      </div>
-
       {/* Hero Section - Full Viewport */}
       <div className="relative z-10 flex items-center justify-center h-screen px-8 overflow-visible">
         <div className="w-full mx-auto space-y-8 animate-fade-in text-center overflow-visible">

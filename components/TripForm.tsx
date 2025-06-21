@@ -12,6 +12,7 @@ import { MapPin, Calendar as CalendarIcon, DollarSign, Heart, Eye, ArrowRight, L
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import type { DateRange } from "react-day-picker"
+import LocationAutocomplete from "@/components/LocationAutocomplete"
 
 export interface TripFormData {
   destination: string
@@ -98,17 +99,11 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
           <MapPin className="h-5 w-5 text-blue-600" />
           <span>Where do you want to go?</span>
         </Label>
-        <Input
-          type="text"
-          value={formData.destination}
-          onChange={(e) => handleInputChange("destination", e.target.value)}
-          placeholder="e.g., Paris, Tokyo, New York..."
-          className="w-full glass-morphism border border-white/20 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:ring-2 focus:border-transparent text-gray-800 placeholder-gray-500 h-auto"
-          style={{ 
-            boxShadow: `0 0 0 2px rgba(59, 130, 246, 0.3)`,
-            transition: 'box-shadow 0.3s ease'
-          }}
-          required
+        <LocationAutocomplete
+          onLocationSelect={(location) => handleInputChange("destination", location.description)}
+          placeholder="Search for a destination..."
+          value={formData.destination || ""}
+          className="w-full"
         />
       </div>
 
