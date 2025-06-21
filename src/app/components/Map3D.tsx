@@ -20,13 +20,11 @@ export default function Map3D({ points }: Map3DProps) {
   const map = useRef<MapboxMap | null>(null);
   const markers = useRef<Marker[]>([]);
 
-  // State to toggle 3D angle vs bird's eye
   const [is3DView, setIs3DView] = useState(true);
-
-  // State to toggle dark mode
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [mapStyleVersion, setMapStyleVersion] = useState(0); // Forces marker refresh
 
-  // Initialize map once
+  // Initialize map
   useEffect(() => {
     if (map.current) return;
 
@@ -46,13 +44,13 @@ export default function Map3D({ points }: Map3DProps) {
       addTerrainAndLayers();
     });
 
-    // Re-add terrain and layers after style changes (important!)
     map.current.on('styledata', () => {
       addTerrainAndLayers();
+      setMapStyleVersion(prev => prev + 1);
     });
   }, []);
 
-  // Animate pitch & bearing when toggling view
+  // Animate view transitions
   useEffect(() => {
     if (!map.current) return;
 
@@ -63,7 +61,7 @@ export default function Map3D({ points }: Map3DProps) {
     });
   }, [is3DView]);
 
-  // Change style when toggling dark mode
+  // Change style on dark mode toggle
   useEffect(() => {
     if (!map.current) return;
 
@@ -74,11 +72,11 @@ export default function Map3D({ points }: Map3DProps) {
     map.current.setStyle(styleUrl);
   }, [isDarkMode]);
 
-  // Update markers when points change
+  // Add markers whenever points or style version changes
   useEffect(() => {
     if (!map.current) return;
 
-    // Remove old markers
+    // Clear old markers
     markers.current.forEach(marker => marker.remove());
     markers.current = [];
 
@@ -90,13 +88,12 @@ export default function Map3D({ points }: Map3DProps) {
         .addTo(map.current!);
       markers.current.push(marker);
     });
-  }, [points]);
+  }, [points, mapStyleVersion]);
 
-  // Helper to add terrain, sky, 3D buildings layers
+  // Helper to add terrain and 3D layers
   function addTerrainAndLayers() {
     if (!map.current) return;
 
-    // Avoid adding the DEM source multiple times
     if (!map.current.getSource('mapbox-dem')) {
       map.current.addSource('mapbox-dem', {
         type: 'raster-dem',
@@ -108,7 +105,6 @@ export default function Map3D({ points }: Map3DProps) {
 
     map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
 
-    // Add sky layer if not added yet
     if (!map.current.getLayer('sky')) {
       map.current.addLayer({
         id: 'sky',
@@ -121,7 +117,6 @@ export default function Map3D({ points }: Map3DProps) {
       });
     }
 
-    // Add 3D buildings layer if not added yet
     if (!map.current.getLayer('3d-buildings')) {
       const layers = map.current.getStyle().layers!;
       const labelLayerId = layers.find(

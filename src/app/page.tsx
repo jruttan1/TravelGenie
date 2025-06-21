@@ -18,19 +18,12 @@ export default function Home() {
   const addPoint = () => {
     setPoints(prev => [
       ...prev,
-      { lng: -73.9857, lat: 40.7484, name: 'Empire State Building' },
+      { lng: -74.0445, lat: 40.6892, name: 'Statue of Liberty' },
     ]);
   };
-
+  
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h1 className="text-3xl font-bold mb-4">AI Travel Planner</h1>
-      <button
-        className="mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-        onClick={addPoint}
-      >
-        Add New Location
-      </button>
 
       {/* Pass points to the Map3D component */}
       <Map3D points={points} />
