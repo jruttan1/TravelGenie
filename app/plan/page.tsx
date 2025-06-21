@@ -1,24 +1,11 @@
 "use client"
 
 import React, { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Sparkles } from "lucide-react"
-import TripForm, { TripFormData } from "@/components/TripForm"
+import TripForm from "@/components/TripForm"
 
 export default function PlanTrip() {
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-
-  const handleFormSubmit = async (formData: TripFormData) => {
-    setIsLoading(true)
-
-    // Mock API call - simulate processing time
-    setTimeout(() => {
-      setIsLoading(false)
-      // Navigate to trip result page
-      router.push("/trip/paris-3days-art-food")
-    }, 2000)
-  }
 
   return (
     <div className="min-h-screen dotted-background relative overflow-visible">
@@ -48,7 +35,7 @@ export default function PlanTrip() {
           </div>
 
           {/* Trip Form */}
-          <TripForm onSubmit={handleFormSubmit} isLoading={isLoading} />
+          <TripForm isLoading={isLoading} />
         </div>
       </div>
     </div>
