@@ -168,7 +168,6 @@ Do not include any text before or after the JSON array. Do not use markdown code
     // Try to parse the JSON response
     try {
       const cleanText = cleanJsonText(text);
-      console.log('Cleaned response:', cleanText);
       
       const recommendations = JSON.parse(cleanText);
       
