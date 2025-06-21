@@ -26,13 +26,22 @@ export default async function TripPage({ params }: TripPageProps) {
 
   if (!itinerary) {
     return (
-      <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
-        <div className="text-center glass-effect p-12 rounded-3xl shadow-2xl max-w-md mx-4">
-          <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+      <div className="min-h-screen dotted-background relative overflow-visible flex items-center justify-center">
+        <div className="bokeh-container">
+          <div className="bokeh bokeh-1"></div>
+          <div className="bokeh bokeh-2"></div>
+          <div className="bokeh bokeh-3"></div>
+          <div className="bokeh bokeh-4"></div>
+          <div className="bokeh bokeh-5"></div>
+          <div className="bokeh bokeh-6"></div>
+        </div>
+        
+        <div className="relative z-10 text-center glass-morphism p-12 rounded-3xl shadow-2xl max-w-md mx-4 overflow-visible">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ background: 'linear-gradient(45deg, #ff9a9e, #ffc3a0)' }}>
             <MapPin className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Trip Not Found</h1>
-          <p className="text-gray-600">The requested itinerary could not be found.</p>
+          <h1 className="text-2xl font-bold mb-4 gradient-text-modern">Trip Not Found</h1>
+          <p className="leading-relaxed" style={{ color: '#666' }}>The requested itinerary could not be found.</p>
         </div>
       </div>
     )
@@ -44,59 +53,66 @@ export default async function TripPage({ params }: TripPageProps) {
   }
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] relative">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30"></div>
+    <div className="min-h-screen dotted-background relative overflow-visible">
+      {/* Bokeh Background Effects */}
+      <div className="bokeh-container">
+        <div className="bokeh bokeh-1"></div>
+        <div className="bokeh bokeh-2"></div>
+        <div className="bokeh bokeh-3"></div>
+        <div className="bokeh bokeh-4"></div>
+        <div className="bokeh bokeh-5"></div>
+        <div className="bokeh bokeh-6"></div>
+      </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-8 py-20 overflow-visible">
         {/* Header */}
-        <div className="glass-effect rounded-3xl shadow-2xl p-8 mb-8 animate-fade-in">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div className="mb-6 lg:mb-0">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl">
+        <div className="glass-morphism rounded-3xl shadow-2xl p-8 mb-8 animate-fade-in overflow-visible">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between overflow-visible">
+            <div className="mb-6 lg:mb-0 overflow-visible">
+              <div className="flex items-center space-x-3 mb-4 overflow-visible">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #ff9a9e, #ffc3a0)' }}>
                   <MapPin className="h-6 w-6 text-white" />
                 </div>
-                <h1 className="text-4xl font-bold gradient-text">{itinerary.destination}</h1>
+                <h1 className="text-4xl font-bold gradient-text-modern px-4">{itinerary.destination}</h1>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-2 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">{itinerary.duration}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 overflow-visible">
+                <div className="flex items-center space-x-2 glass-morphism px-4 py-2 rounded-full">
+                  <Calendar className="h-4 w-4" style={{ color: '#ffc3a0' }} />
+                  <span className="text-sm font-medium" style={{ color: '#333' }}>{itinerary.duration}</span>
                 </div>
-                <div className="flex items-center space-x-2 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-700">{itinerary.budget} Budget</span>
+                <div className="flex items-center space-x-2 glass-morphism px-4 py-2 rounded-full">
+                  <DollarSign className="h-4 w-4" style={{ color: '#ffafbd' }} />
+                  <span className="text-sm font-medium" style={{ color: '#333' }}>{itinerary.budget} Budget</span>
                 </div>
-                <div className="flex items-center space-x-2 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <Heart className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium text-gray-700">{itinerary.interests.join(", ")}</span>
+                <div className="flex items-center space-x-2 glass-morphism px-4 py-2 rounded-full">
+                  <Heart className="h-4 w-4" style={{ color: '#fecfef' }} />
+                  <span className="text-sm font-medium" style={{ color: '#333' }}>{itinerary.interests.join(", ")}</span>
                 </div>
               </div>
             </div>
             <button
               onClick={handleDownloadPDF}
-              className="flex items-center space-x-3 bg-gradient-to-r from-green-500 to-teal-600 text-white px-8 py-4 rounded-2xl hover:from-green-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="modern-button group inline-flex items-center gap-3"
             >
               <Download className="h-5 w-5" />
-              <span className="font-semibold">Download PDF</span>
+              <span>Download PDF</span>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 overflow-visible">
           {/* Itinerary */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-8 overflow-visible">
             {itinerary.days.map((day, index) => (
-              <div key={day.day} style={{ animationDelay: `${index * 0.1}s` }}>
+              <div key={day.day} className="animate-fade-in overflow-visible" style={{ animationDelay: `${index * 0.1}s` }}>
                 <DayCard day={day} />
               </div>
             ))}
           </div>
 
           {/* Map */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24">
+          <div className="lg:col-span-1 overflow-visible">
+            <div className="sticky top-24 overflow-visible">
               <MapPlaceholder />
             </div>
           </div>

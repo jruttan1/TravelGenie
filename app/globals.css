@@ -7,11 +7,193 @@ html {
 }
 
 body {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  background-attachment: fixed;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Poppins", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* Cursive text style - Elegant flowing script */
+.cursive-text {
+  font-family: var(--font-dancing-script), "Brush Script MT", cursive;
+  font-style: italic;
+  font-weight: 600;
+  padding: 0.5rem 1rem 1rem 1rem;
+  overflow: visible;
+  line-height: 1.3;
+  display: inline-block;
+}
+
+/* Beautiful White Dotted Paper Background */
+.dotted-background {
+  background-color: #fefefe;
+  background-image: radial-gradient(circle, #e5e7eb 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  background-attachment: fixed;
+}
+
+/* Beautiful Bokeh Effects - Updated for white background with sunset colors */
+.bokeh-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.bokeh {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: float 15s infinite linear;
+  filter: blur(2px);
+}
+
+.bokeh-1 {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(45deg, #ff9a9e, #ffa726);
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.bokeh-2 {
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(45deg, #ffc3a0, #ffafbd);
+  top: 20%;
+  right: 15%;
+  animation-delay: -3s;
+}
+
+.bokeh-3 {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(45deg, #fecfef, #ffc3a0);
+  bottom: 20%;
+  left: 20%;
+  animation-delay: -6s;
+}
+
+.bokeh-4 {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(45deg, #ffafbd, #fad0c4);
+  bottom: 10%;
+  right: 10%;
+  animation-delay: -10s;
+}
+
+.bokeh-5 {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(45deg, #ff9a9e, #fecfef);
+  top: 50%;
+  left: 5%;
+  animation-delay: -8s;
+}
+
+.bokeh-6 {
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(45deg, #fad0c4, #ffc3a0);
+  top: 30%;
+  right: 30%;
+  animation-delay: -2s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateY(0px) rotate(360deg);
+    opacity: 0.2;
+  }
+}
+
+/* Glass morphism effect - Updated for white background with sunset tint */
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 175, 189, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(255, 154, 158, 0.15);
+}
+
+/* Modern gradient text - Updated with sunset colors */
+.gradient-text-modern {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #ffc3a0 50%, #ffafbd 75%, #fad0c4 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Button hover effects - Updated with sunset gradient */
+.modern-button {
+  background: linear-gradient(135deg, #ff9a9e 0%, #ffc3a0 50%, #ffafbd 100%);
+  border: none;
+  border-radius: 50px;
+  color: white;
+  font-weight: 600;
+  padding: 16px 32px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(255, 154, 158, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(255, 154, 158, 0.5);
+}
+
+.modern-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.modern-button:hover::before {
+  left: 100%;
+}
+
+/* Floating animation */
+.float-animation {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Existing styles */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
