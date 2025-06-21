@@ -16,16 +16,16 @@ export default function Home() {
 
       {/* Floating Decorative Elements */}
       <div className="absolute top-10 left-10 glass-morphism p-4 rounded-xl float-animation">
-        <MapPin className="h-6 w-6" style={{ color: '#ff9a9e' }} />
+        <MapPin className="h-6 w-6 text-blue-500" />
       </div>
       <div className="absolute top-20 right-20 glass-morphism p-4 rounded-xl float-animation" style={{ animationDelay: '1s' }}>
-        <Sparkles className="h-6 w-6" style={{ color: '#ffc3a0' }} />
+        <Sparkles className="h-6 w-6 text-indigo-500" />
       </div>
       <div className="absolute bottom-32 left-16 glass-morphism p-4 rounded-xl float-animation" style={{ animationDelay: '2s' }}>
-        <Plane className="h-6 w-6" style={{ color: '#ffafbd' }} />
+        <Plane className="h-6 w-6 text-emerald-500" />
       </div>
       <div className="absolute bottom-20 right-32 glass-morphism p-4 rounded-xl float-animation" style={{ animationDelay: '3s' }}>
-        <Star className="h-6 w-6" style={{ color: '#fecfef' }} />
+        <Star className="h-6 w-6 text-cyan-500" />
       </div>
 
       {/* Hero Section - Full Viewport */}
@@ -33,8 +33,8 @@ export default function Home() {
         <div className="w-full mx-auto space-y-8 animate-fade-in text-center overflow-visible">
           {/* Subtitle */}
           <div className="glass-morphism inline-block px-6 py-3 rounded-full">
-            <p className="text-sm font-medium" style={{ color: '#ff9a9e' }}>
-              ✨ AI-Powered Travel Planning
+            <p className="text-sm font-medium text-blue-600">
+              🧞‍♂️ AI-Powered Travel Planning
             </p>
           </div>
 
@@ -48,7 +48,7 @@ export default function Home() {
 
           {/* Description */}
           <div className="px-8 overflow-visible">
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed" style={{ color: '#666' }}>
+            <p className="text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed text-gray-600">
               Let AI curate your dream journey with personalized recommendations, 
               smart itineraries, and hidden gems tailored just for you.
             </p>
@@ -66,13 +66,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Sunset Scroll Indicator - Inline */}
+      {/* Modern Scroll Indicator */}
       <div className="fixed bottom-0 left-0 right-0 h-24 z-30 pointer-events-none overflow-visible">
-        {/* Sunset Gradient Background */}
+        {/* Modern Gradient Background */}
         <div 
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(to top, rgba(255, 154, 158, 0.6) 0%, rgba(255, 195, 160, 0.4) 30%, rgba(255, 175, 189, 0.2) 60%, transparent 100%)'
+            background: 'linear-gradient(to top, rgba(59, 130, 246, 0.4) 0%, rgba(99, 102, 241, 0.3) 30%, rgba(139, 92, 246, 0.2) 60%, transparent 100%)'
           }}
         />
         
@@ -91,29 +91,29 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 mb-16 overflow-visible">
             {/* Feature 1 */}
             <div className="glass-morphism p-8 rounded-2xl text-center hover:transform hover:scale-105 transition-all duration-300 overflow-visible">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #ff9a9e, #fecfef)' }}>
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
                 <Sparkles className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4 px-4" style={{ color: '#ff9a9e' }}>AI-Powered</h3>
-              <p className="text-lg px-4 leading-relaxed" style={{ color: '#666' }}>Smart algorithms analyze your preferences to create the perfect itinerary</p>
+              <h3 className="text-2xl font-semibold mb-4 px-4 text-blue-600">AI-Powered</h3>
+              <p className="text-lg px-4 leading-relaxed text-gray-600">Smart algorithms analyze your preferences to create the perfect itinerary</p>
             </div>
 
             {/* Feature 2 */}
             <div className="glass-morphism p-8 rounded-2xl text-center hover:transform hover:scale-105 transition-all duration-300 overflow-visible">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #ffc3a0, #ffafbd)' }}>
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-cyan-600">
                 <MapPin className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4 px-4" style={{ color: '#ffc3a0' }}>Personalized</h3>
-              <p className="text-lg px-4 leading-relaxed" style={{ color: '#666' }}>Every recommendation is tailored to your unique travel style and interests</p>
+              <h3 className="text-2xl font-semibold mb-4 px-4 text-emerald-600">Personalized</h3>
+              <p className="text-lg px-4 leading-relaxed text-gray-600">Every recommendation is tailored to your unique travel style and interests</p>
             </div>
 
             {/* Feature 3 */}
             <div className="glass-morphism p-8 rounded-2xl text-center hover:transform hover:scale-105 transition-all duration-300 overflow-visible">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #ffafbd, #fad0c4)' }}>
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-violet-600">
                 <Plane className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4 px-4" style={{ color: '#ffafbd' }}>Seamless</h3>
-              <p className="text-lg px-4 leading-relaxed" style={{ color: '#666' }}>From planning to booking, enjoy a smooth and effortless travel experience</p>
+              <h3 className="text-2xl font-semibold mb-4 px-4 text-purple-600">Seamless</h3>
+              <p className="text-lg px-4 leading-relaxed text-gray-600">From planning to booking, enjoy a smooth and effortless travel experience</p>
             </div>
           </div>
 
@@ -122,13 +122,13 @@ export default function Home() {
             <div className="glass-morphism p-8 rounded-2xl max-w-3xl mx-auto overflow-visible">
               <div className="flex items-center justify-center gap-2 mb-4">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-6 w-6 fill-current" style={{ color: '#ffc3a0' }} />
+                  <Star key={i} className="h-6 w-6 fill-current text-amber-400" />
                 ))}
               </div>
-              <p className="text-xl font-medium mb-3 px-4" style={{ color: '#ff9a9e' }}>
+              <p className="text-xl font-medium mb-3 px-4 text-blue-600">
                 "TravelGenie transformed how I plan trips!"
               </p>
-              <p className="text-lg px-4 leading-relaxed" style={{ color: '#666' }}>
+              <p className="text-lg px-4 leading-relaxed text-gray-600">
                 - Over 10k+ happy travelers
               </p>
             </div>

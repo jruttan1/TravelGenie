@@ -29,104 +29,110 @@ body {
   background-attachment: fixed;
 }
 
-/* Beautiful Bokeh Effects - Updated for white background with sunset colors */
+/* Beautiful Bokeh Effects - Updated for modern neutral colors */
 .bokeh-container {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
 }
 
 .bokeh {
   position: absolute;
   border-radius: 50%;
-  opacity: 0.2;
-  animation: float 15s infinite linear;
-  filter: blur(2px);
+  filter: blur(3px);
+  animation: float 20s infinite linear;
 }
 
 .bokeh-1 {
   width: 80px;
   height: 80px;
-  background: linear-gradient(45deg, #ff9a9e, #ffa726);
-  top: 10%;
+  background: linear-gradient(45deg, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.2));
+  top: 20%;
   left: 10%;
+  animation-duration: 25s;
   animation-delay: 0s;
 }
 
 .bokeh-2 {
   width: 120px;
   height: 120px;
-  background: linear-gradient(45deg, #ffc3a0, #ffafbd);
-  top: 20%;
+  background: linear-gradient(45deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.2));
+  top: 60%;
   right: 15%;
-  animation-delay: -3s;
+  animation-duration: 30s;
+  animation-delay: -5s;
 }
 
 .bokeh-3 {
   width: 60px;
   height: 60px;
-  background: linear-gradient(45deg, #fecfef, #ffc3a0);
-  bottom: 20%;
+  background: linear-gradient(45deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.2));
+  bottom: 30%;
   left: 20%;
-  animation-delay: -6s;
+  animation-duration: 35s;
+  animation-delay: -10s;
 }
 
 .bokeh-4 {
   width: 100px;
   height: 100px;
-  background: linear-gradient(45deg, #ffafbd, #fad0c4);
-  bottom: 10%;
-  right: 10%;
-  animation-delay: -10s;
+  background: linear-gradient(45deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.2));
+  top: 40%;
+  right: 30%;
+  animation-duration: 28s;
+  animation-delay: -15s;
 }
 
 .bokeh-5 {
-  width: 70px;
-  height: 70px;
-  background: linear-gradient(45deg, #ff9a9e, #fecfef);
-  top: 50%;
-  left: 5%;
-  animation-delay: -8s;
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(45deg, rgba(139, 92, 246, 0.3), rgba(16, 185, 129, 0.2));
+  bottom: 20%;
+  right: 10%;
+  animation-duration: 32s;
+  animation-delay: -20s;
 }
 
 .bokeh-6 {
-  width: 90px;
-  height: 90px;
-  background: linear-gradient(45deg, #fad0c4, #ffc3a0);
-  top: 30%;
-  right: 30%;
-  animation-delay: -2s;
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(45deg, rgba(16, 185, 129, 0.3), rgba(99, 102, 241, 0.25));
+  top: 10%;
+  left: 60%;
+  animation-duration: 26s;
+  animation-delay: -8s;
 }
 
 @keyframes float {
   0% {
-    transform: translateY(0px) rotate(0deg);
-    opacity: 0.2;
+    transform: translateY(0px) translateX(0px) rotate(0deg);
   }
-  50% {
-    transform: translateY(-20px) rotate(180deg);
-    opacity: 0.35;
+  33% {
+    transform: translateY(-30px) translateX(20px) rotate(120deg);
+  }
+  66% {
+    transform: translateY(20px) translateX(-20px) rotate(240deg);
   }
   100% {
-    transform: translateY(0px) rotate(360deg);
-    opacity: 0.2;
+    transform: translateY(0px) translateX(0px) rotate(360deg);
   }
 }
 
-/* Glass morphism effect - Updated for white background with sunset tint */
+/* Glass morphism effect - Updated with neutral colors */
 .glass-morphism {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 175, 189, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(255, 154, 158, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(59, 130, 246, 0.1);
 }
 
-/* Modern gradient text - Updated with sunset colors */
+/* Modern gradient text - Updated with professional colors */
 .gradient-text-modern {
-  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #ffc3a0 50%, #ffafbd 75%, #fad0c4 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 25%, #10b981 50%, #06b6d4 75%, #8b5cf6 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -143,9 +149,9 @@ body {
   }
 }
 
-/* Button hover effects - Updated with sunset gradient */
+/* Button hover effects - Updated with modern gradient */
 .modern-button {
-  background: linear-gradient(135deg, #ff9a9e 0%, #ffc3a0 50%, #ffafbd 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
   border: none;
   border-radius: 50px;
   color: white;
@@ -154,14 +160,14 @@ body {
   font-size: 18px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 30px rgba(255, 154, 158, 0.4);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
   position: relative;
   overflow: hidden;
 }
 
 .modern-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(255, 154, 158, 0.5);
+  box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
 }
 
 .modern-button::before {
