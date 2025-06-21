@@ -12,12 +12,44 @@ export default function PlanTrip() {
   const handleFormSubmit = async (formData: TripFormData) => {
     setIsLoading(true)
 
-    // Mock API call - simulate processing time
-    setTimeout(() => {
-      setIsLoading(false)
-      // Navigate to trip result page
+    try {
+      const response = await fetch('/api/trip-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          destination: formData.destination,
+          budget: formData.budget,
+          preferences: formData.preferences,
+          mustSee: formData.mustSee,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Failed to generate trip recommendations: ${response.status} ${errorText}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.recommendations) {
+        // Store the recommendations in localStorage
+        localStorage.setItem('tripRecommendations', JSON.stringify(data.recommendations))
+        localStorage.setItem('tripFormData', JSON.stringify(formData))
+        
+        // Navigate to results page
+        router.push('/trip/results')
+      } else {
+        throw new Error(data.error || 'Failed to generate recommendations')
+      }
+    } catch (error) {
+      console.error('Error generating trip recommendations:', error)
+      // Fallback to the default navigation
       router.push("/trip/paris-3days-art-food")
-    }, 2000)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
