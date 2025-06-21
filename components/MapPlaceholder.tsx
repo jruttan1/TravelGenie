@@ -1,6 +1,5 @@
 import { Map } from "lucide-react"
 import Map3D from "./Map3D"
-
 export default function MapPlaceholder() {
   const pinpoints = [
     {
