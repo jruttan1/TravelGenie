@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { MapPin, Calendar as CalendarIcon, DollarSign, Heart, Eye, ArrowRight, Loader2 } from "lucide-react"
+import { MapPin, Calendar as CalendarIcon, DollarSign, Heart, Eye, ArrowRight, Loader2, Clock, Navigation } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import type { DateRange } from "react-day-picker"
+import LocationAutocomplete from "@/components/LocationAutocomplete"
 
 export interface TripFormData {
   destination: string
@@ -19,6 +20,8 @@ export interface TripFormData {
   budget: string
   preferences: string[]
   mustSee: string
+  wakeupTime: string
+  radius: string
 }
 
 const budgetOptions = [
@@ -38,6 +41,19 @@ const preferenceOptions = [
   { value: "relaxation", label: "Relaxation", icon: "🧘" },
 ]
 
+const wakeupTimeOptions = [
+  { value: "early", label: "Early Bird", description: "6:00 - 7:00 AM", icon: "🌅" },
+  { value: "morning", label: "Morning Person", description: "7:00 - 9:00 AM", icon: "☀️" },
+  { value: "late", label: "Leisurely Start", description: "9:00 - 11:00 AM", icon: "😴" },
+]
+
+const radiusOptions = [
+  { value: "walkable", label: "Walking Distance", description: "Within 2-3 km", icon: "🚶" },
+  { value: "local", label: "Local Area", description: "Within 10-15 km", icon: "🚌" },
+  { value: "regional", label: "Regional", description: "Within 50 km", icon: "🚗" },
+  { value: "extended", label: "Extended Area", description: "Within 100 km", icon: "🚗" },
+]
+
 interface TripFormProps {
   onSubmit?: (data: TripFormData) => void
   isLoading?: boolean
@@ -51,6 +67,8 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     budget: "",
     preferences: [],
     mustSee: "",
+    wakeupTime: "",
+    radius: "",
   })
   
   const router = useRouter()
@@ -78,6 +96,10 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     if (onSubmit) {
       onSubmit(formData)
     } else {
+<<<<<<< Updated upstream
+      // Default behavior - navigate to trip result
+      router.push("/trip/paris-3days-art-food")
+=======
       // Call the Gemini API to get trip recommendations
       try {
         const response = await fetch('/api/trip-plan', {
@@ -96,6 +118,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
         if (!response.ok) {
           const errorText = await response.text()
           throw new Error(`Failed to generate trip recommendations: ${response.status} ${errorText}`)
+          console.log(errorText);
         }
 
         const data = await response.json()
@@ -112,9 +135,10 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
         }
       } catch (error) {
         console.error('Error generating trip recommendations:', error)
-        // Fallback to the error page
-        router.push("/trip/fallback")
+        // Fallback to the default navigation
+        router.push("/trip/paris-3days-art-food")
       }
+>>>>>>> Stashed changes
     }
   }
 
@@ -123,7 +147,9 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     formData.dateRange?.from && 
     formData.dateRange?.to && 
     formData.budget && 
-    formData.preferences.length > 0
+    formData.preferences.length > 0 &&
+    formData.wakeupTime &&
+    formData.radius
 
   return (
     <form onSubmit={handleSubmit} className={cn("p-8 space-y-8 overflow-visible", className)}>
@@ -133,17 +159,11 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
           <MapPin className="h-5 w-5 text-blue-600" />
           <span>Where do you want to go?</span>
         </Label>
-        <Input
-          type="text"
-          value={formData.destination}
-          onChange={(e) => handleInputChange("destination", e.target.value)}
-          placeholder="e.g., Paris, Tokyo, New York..."
-          className="w-full glass-morphism border border-white/20 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:ring-2 focus:border-transparent text-gray-800 placeholder-gray-500 h-auto"
-          style={{ 
-            boxShadow: `0 0 0 2px rgba(59, 130, 246, 0.3)`,
-            transition: 'box-shadow 0.3s ease'
-          }}
-          required
+        <LocationAutocomplete
+          onLocationSelect={(location) => handleInputChange("destination", location.description)}
+          placeholder="Search for a destination..."
+          value={formData.destination || ""}
+          className="w-full"
         />
       </div>
 
@@ -259,8 +279,70 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
         <p className="text-sm mt-2 px-4 text-gray-600">Select all that apply</p>
       </div>
 
-      {/* Must See */}
+      {/* Wakeup Time */}
       <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.4s" }}>
+        <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-orange-600">
+          <Clock className="h-5 w-5 text-orange-600" />
+          <span>What time do you like to start your day?</span>
+        </Label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 overflow-visible">
+          {wakeupTimeOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleInputChange("wakeupTime", option.value)}
+              className={cn(
+                "p-6 rounded-2xl border-2 transition-all duration-200 text-left hover:scale-105 overflow-visible",
+                formData.wakeupTime === option.value
+                  ? "shadow-lg"
+                  : "glass-morphism"
+              )}
+              style={{
+                borderColor: formData.wakeupTime === option.value ? '#ea580c' : 'rgba(255, 255, 255, 0.3)',
+                backgroundColor: formData.wakeupTime === option.value ? 'rgba(234, 88, 12, 0.1)' : undefined
+              }}
+            >
+              <div className="text-2xl mb-2">{option.icon}</div>
+              <h3 className="font-semibold mb-1 text-gray-700">{option.label}</h3>
+              <p className="text-sm leading-relaxed text-gray-600">{option.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Travel Distance */}
+      <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.5s" }}>
+        <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-teal-600">
+          <Navigation className="h-5 w-5 text-teal-600" />
+          <span>How far are you willing to travel from your destination?</span>
+        </Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-visible">
+          {radiusOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleInputChange("radius", option.value)}
+              className={cn(
+                "p-6 rounded-2xl border-2 transition-all duration-200 text-left hover:scale-105 overflow-visible",
+                formData.radius === option.value
+                  ? "shadow-lg"
+                  : "glass-morphism"
+              )}
+              style={{
+                borderColor: formData.radius === option.value ? '#0d9488' : 'rgba(255, 255, 255, 0.3)',
+                backgroundColor: formData.radius === option.value ? 'rgba(13, 148, 136, 0.1)' : undefined
+              }}
+            >
+              <div className="text-2xl mb-2">{option.icon}</div>
+              <h3 className="font-semibold mb-1 text-gray-700">{option.label}</h3>
+              <p className="text-sm leading-relaxed text-gray-600">{option.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Must See */}
+      <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.6s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-cyan-600">
           <Eye className="h-5 w-5 text-cyan-600" />
           <span>Any must-see places or experiences?</span>
@@ -279,7 +361,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
       </div>
 
       {/* Submit Button */}
-      <div className="pt-8 animate-fade-in overflow-visible" style={{ animationDelay: "0.5s" }}>
+      <div className="pt-8 animate-fade-in overflow-visible" style={{ animationDelay: "0.7s" }}>
         <Button
           type="submit"
           disabled={!isFormValid || isLoading}
