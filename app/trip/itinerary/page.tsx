@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, Suspense } from "react"
+import React, { useState, useEffect, Suspense, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ export default function ItineraryPage() {
   const [loading, setLoading] = useState(true)
   const [currentDay, setCurrentDay] = useState(0)
   const [dataError, setDataError] = useState<string | null>(null)
+  const mapRef = useRef<any>(null)
   const router = useRouter()
 
   // Generate a unique key for the current trip based on form data
@@ -92,67 +93,86 @@ export default function ItineraryPage() {
     setCurrentDay(index)
   }
 
-  // Extract and validate map points
-  const extractMapPoints = (itinerary: ComprehensiveItinerary) => {
-    const points: any[] = []
+  // Handle clicking on an event box to focus the map on that location
+  const handleEventClick = (event: ItineraryEvent | undefined) => {
+    if (!event || !event.coordinates?.lng || !event.coordinates?.lat) {
+      console.log('No coordinates available for this event')
+      return
+    }
+
+    const lng = Number(event.coordinates.lng)
+    const lat = Number(event.coordinates.lat)
     
-    itinerary.days.forEach((day, dayIndex) => {
-      // Add meals with coordinate validation
-      if (day.meals) {
-        [day.meals.breakfast, day.meals.lunch, day.meals.dinner].forEach((meal: ItineraryEvent | undefined) => {
-          if (meal?.coordinates?.lng && meal?.coordinates?.lat) {
-            const lng = Number(meal.coordinates.lng)
-            const lat = Number(meal.coordinates.lat)
-            
-            // Validate coordinates are reasonable (basic sanity check)
-            if (!isNaN(lng) && !isNaN(lat) && lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
-              points.push({
-                lng,
-                lat,
-                name: meal.name || 'Unnamed Meal',
-                category: meal.category || 'meal',
-                time: meal.startTime,
-                day: dayIndex + 1
-              })
-            }
-          }
-        })
-      }
-      
-      // Add activities with coordinate validation
-      if (day.events && day.events.length > 0) {
-        day.events.forEach((event: ItineraryEvent) => {
-          if (event?.coordinates?.lng && event?.coordinates?.lat) {
-            const lng = Number(event.coordinates.lng)
-            const lat = Number(event.coordinates.lat)
-            
-            // Validate coordinates are reasonable
-            if (!isNaN(lng) && !isNaN(lat) && lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
-              points.push({
-                lng,
-                lat,
-                name: event.name || 'Unnamed Event',
-                category: event.category || 'activity',
-                time: event.startTime,
-                day: dayIndex + 1
-              })
-            }
-          }
-        })
-      }
-    })
+    // Validate coordinates
+    if (isNaN(lng) || isNaN(lat) || lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+      console.log('Invalid coordinates for this event')
+      return
+    }
+
+    console.log(`🗺️ Focusing map on event: ${event.name} at [${lng}, ${lat}]`)
     
-    return points
+    // Call the map's focus method if available
+    if (mapRef.current && mapRef.current.focusOnPoint) {
+      mapRef.current.focusOnPoint(lng, lat, event.name)
+    }
   }
 
-  // Convert itinerary events to map points
+  // Convert itinerary events to map points for current day only
   const getMapPoints = () => {
-    if (!itinerary) {
+    if (!itinerary || !itinerary.days[currentDay]) {
       return []
     }
     
-    const points = extractMapPoints(itinerary)
-    console.log('🗺️ Passing', points.length, 'points to Map3D component')
+    const currentDayData = itinerary.days[currentDay]
+    const points: any[] = []
+    
+    // Add meals for current day with coordinate validation
+    if (currentDayData.meals) {
+      [currentDayData.meals.breakfast, currentDayData.meals.lunch, currentDayData.meals.dinner].forEach((meal: ItineraryEvent | undefined) => {
+        if (meal?.coordinates?.lng && meal?.coordinates?.lat) {
+          const lng = Number(meal.coordinates.lng)
+          const lat = Number(meal.coordinates.lat)
+          
+          // Validate coordinates are reasonable (basic sanity check)
+          if (!isNaN(lng) && !isNaN(lat) && lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
+            points.push({
+              lng,
+              lat,
+              name: meal.name || 'Unnamed Meal',
+              category: meal.category || 'meal',
+              time: meal.startTime,
+              day: currentDay + 1,
+              description: meal.description || ''
+            })
+          }
+        }
+      })
+    }
+    
+    // Add activities for current day with coordinate validation
+    if (currentDayData.events && currentDayData.events.length > 0) {
+      currentDayData.events.forEach((event: ItineraryEvent) => {
+        if (event?.coordinates?.lng && event?.coordinates?.lat) {
+          const lng = Number(event.coordinates.lng)
+          const lat = Number(event.coordinates.lat)
+          
+          // Validate coordinates are reasonable
+          if (!isNaN(lng) && !isNaN(lat) && lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
+            points.push({
+              lng,
+              lat,
+              name: event.name || 'Unnamed Event',
+              category: event.category || 'activity',
+              time: event.startTime,
+              day: currentDay + 1,
+              description: event.description || ''
+            })
+          }
+        }
+      })
+    }
+    
+    console.log(`🗺️ Passing ${points.length} points for Day ${currentDay + 1} to Map3D component`)
     
     return points
   }
@@ -300,6 +320,8 @@ export default function ItineraryPage() {
                   points={getMapPoints()} 
                   showRoute={true}
                   animateRoute={false}
+                  currentDay={currentDay + 1}
+                  ref={mapRef}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-50">
@@ -349,7 +371,11 @@ export default function ItineraryPage() {
               <CardContent className="p-4 max-h-[500px] overflow-y-auto">
                 <div className="space-y-3">
                   {allEvents.map((event, index) => (
-                    <div key={event?.id || index} className="border border-gray-200 rounded-lg p-3 bg-white">
+                    <div 
+                      key={event?.id || index} 
+                      className="border border-gray-200 rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => handleEventClick(event)}
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-start gap-3">
                           <div className="text-xs font-mono text-gray-500 min-w-[60px] mt-1">
