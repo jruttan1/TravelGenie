@@ -83,36 +83,55 @@ export default function TripResultsPage() {
   const [recommendations, setRecommendations] = useState<TripRecommendation[]>([])
   const [formData, setFormData] = useState<TripFormData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({})
   const [selectedPlaces, setSelectedPlaces] = useState<string[]>([])
   const [placeDetails, setPlaceDetails] = useState<Record<string, PlaceDetails>>({})
-  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({})
   const [filteredRecommendations, setFilteredRecommendations] = useState<TripRecommendation[]>([])
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [isCreatingItinerary, setIsCreatingItinerary] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
-    // Get data from localStorage
-    const storedRecommendations = localStorage.getItem('tripRecommendations')
-    const storedFormData = localStorage.getItem('tripFormData')
-
-    if (storedRecommendations && storedFormData) {
+    const loadTripData = async () => {
       try {
-        const parsedRecommendations = JSON.parse(storedRecommendations)
-        setRecommendations(parsedRecommendations)
-        setFormData(JSON.parse(storedFormData))
-        
-        // Fetch details for all recommendations
-        parsedRecommendations.forEach((rec: TripRecommendation) => {
-          fetchPlaceDetails(rec.place_name)
-        })
+        // Get data from localStorage
+        const storedRecommendations = localStorage.getItem('tripRecommendations')
+        const storedFormData = localStorage.getItem('tripFormData')
+
+        if (storedRecommendations && storedFormData) {
+          const parsedRecommendations = JSON.parse(storedRecommendations)
+          const parsedFormData = JSON.parse(storedFormData)
+          
+          setRecommendations(parsedRecommendations)
+          setFormData(parsedFormData)
+          
+          // Start loading place details
+          setIsLoadingDetails(true)
+          
+          // Fetch details for all recommendations
+          const detailPromises = parsedRecommendations.map((rec: TripRecommendation) => 
+            fetchPlaceDetails(rec.place_name)
+          )
+          
+          // Wait for all place details to be fetched
+          await Promise.allSettled(detailPromises)
+          
+          setIsLoadingDetails(false)
+        } else {
+          // No data found, redirect to home
+          router.push('/')
+          return
+        }
       } catch (error) {
-        console.error('Error parsing stored data:', error)
+        console.error('Error loading trip data:', error)
         router.push('/')
+        return
+      } finally {
+        setLoading(false)
       }
-    } else {
-      // No data found, redirect to home
-      router.push('/')
     }
-    setLoading(false)
+
+    loadTripData()
   }, [router])
 
   // Filter recommendations to only show those with available details
@@ -187,22 +206,61 @@ export default function TripResultsPage() {
     }
   }
 
-  const handleCreateItinerary = () => {
-    // Store place details for final itinerary
-    const selectedDetails = selectedPlaces
-      .map(placeName => placeDetails[placeName])
-      .filter(Boolean)
-    localStorage.setItem('placeDetails', JSON.stringify(selectedDetails))
-    // Navigate to final itinerary page
-    router.push('/trip/final')
+  const handleCreateItinerary = async () => {
+    setIsCreatingItinerary(true)
+    
+    try {
+      // Store place details for final itinerary
+      const selectedDetails = selectedPlaces
+        .map(placeName => placeDetails[placeName])
+        .filter(Boolean)
+      localStorage.setItem('placeDetails', JSON.stringify(selectedDetails))
+      
+      // Add a small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Navigate to final itinerary page
+      router.push('/trip/final')
+    } catch (error) {
+      console.error('Error creating itinerary:', error)
+      setIsCreatingItinerary(false)
+    }
   }
 
-  if (loading) {
+  // Show loading spinner while initial data is loading or while fetching place details
+  if (loading || isLoadingDetails) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your perfect trip...</p>
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            {/* Orbiting dots for visual appeal */}
+            <div className="absolute inset-0 animate-spin rounded-full">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-3 h-3 bg-blue-400 rounded-full"></div>
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 w-3 h-3 bg-purple-400 rounded-full"></div>
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-3 h-3 bg-indigo-400 rounded-full"></div>
+              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1 w-3 h-3 bg-cyan-400 rounded-full"></div>
+            </div>
+          </div>
+          
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            {loading ? 'Loading your perfect trip...' : 'Gathering place details...'}
+          </h2>
+          <p className="text-gray-600">
+            {loading 
+              ? 'We\'re preparing your personalized recommendations based on your preferences.'
+              : 'Fetching detailed information about each location to help you make the best choices.'
+            }
+          </p>
+          
+          {/* Progress indicator for place details */}
+          {!loading && isLoadingDetails && (
+            <div className="mt-6">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading {Object.keys(loadingDetails).filter(key => loadingDetails[key]).length} of {recommendations.length} places...</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -513,9 +571,17 @@ export default function TripResultsPage() {
           <div className="flex justify-center mb-8">
             <Button
               onClick={handleCreateItinerary}
-              className="bg-blue-600 hover:bg-blue-700"
+              disabled={isCreatingItinerary}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Final Itinerary ({selectedPlaces.length} places)
+              {isCreatingItinerary ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Creating Itinerary...
+                </>
+              ) : (
+                `Create Final Itinerary (${selectedPlaces.length} places)`
+              )}
             </Button>
           </div>
         )}
