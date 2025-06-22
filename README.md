@@ -13,7 +13,6 @@ A comprehensive Next.js application that creates personalized travel itineraries
 
 ### 🕐 **Advanced Preferences**
 - ⏰ Customizable wake-up time preferences (Early Bird/Morning/Leisurely)
-- 📏 Flexible travel radius settings (Walking/Local/Regional/Extended)
 - 👁️ Must-see attractions and experiences input
 - 🗺️ Interactive maps with Mapbox integration
 
@@ -85,7 +84,7 @@ A comprehensive Next.js application that creates personalized travel itineraries
 3. **Budget**: Choose from Budget-Friendly, Moderate, or Luxury options
 4. **Interests**: Select from 8 categories (Art, Food, Adventure, History, etc.)
 5. **Wake-up Time**: Set your preferred daily start time
-7. **Must-See**: Add specific attractions or experiences you don't want to miss
+6. **Must-See**: Add specific attractions or experiences you don't want to miss
 
 ### 🤖 **AI Itinerary Generation**
 - Submit your preferences to generate a personalized itinerary

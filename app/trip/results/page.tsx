@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, MapPin, Calendar, DollarSign, Heart, Eye, Star, ExternalLink, Clock, Phone, Globe, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -392,21 +391,15 @@ export default function TripResultsPage() {
             {filteredRecommendations.map((rec, index) => (
               <Card 
                 key={index} 
-                className={`glass-morphism border-white/20 transition-all duration-200 hover:shadow-lg cursor-pointer h-full ${
+                className={`glass-morphism transition-all duration-200 hover:shadow-lg cursor-pointer h-full ${
                   selectedPlaces.includes(rec.place_name) 
-                    ? 'ring-2 ring-blue-500 bg-blue-50/50' 
+                    ? '!border-4 !border-blue-500' 
                     : ''
                 }`}
                 onClick={() => handlePlaceToggle(rec.place_name)}
               >
                 <CardContent className="p-6 h-full flex flex-col">
                   <div className="flex items-start gap-3 mb-4">
-                    <Checkbox
-                      checked={selectedPlaces.includes(rec.place_name)}
-                      onCheckedChange={() => handlePlaceToggle(rec.place_name)}
-                      className="mt-1 flex-shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                    />
                     <Badge 
                       variant="outline" 
                       className="flex-shrink-0 bg-blue-100 text-blue-800"

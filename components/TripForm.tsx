@@ -214,6 +214,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     formData.budget && 
     formData.preferences.length > 0 &&
     formData.wakeupTime
+    formData.wakeupTime
 
   return (
     <form onSubmit={handleSubmit} className={cn("p-8 space-y-8 overflow-visible", className)}>
@@ -373,8 +374,9 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
         </div>
       </div>
 
+
       {/* Must See */}
-      <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.6s" }}>
+      <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.5s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-cyan-600">
           <ViewIcon className="h-5 w-5 text-cyan-600" />
           <span>Any must-see places or experiences?</span>
@@ -393,7 +395,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
       </div>
 
       {/* Submit Button */}
-      <div className="pt-8 animate-fade-in overflow-visible" style={{ animationDelay: "0.7s" }}>
+      <div className="pt-8 animate-fade-in overflow-visible" style={{ animationDelay: "0.6s" }}>
         <Button
           type="submit"
           disabled={!isFormValid || isLoading}
