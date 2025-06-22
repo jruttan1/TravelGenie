@@ -166,20 +166,28 @@ export default function ItineraryPage() {
   }
 
   const currentDayData = itinerary.days[currentDay]
-  const allEvents = [
-    currentDayData.meals.breakfast,
-    ...currentDayData.events.filter(e => e.startTime < currentDayData.meals.lunch.startTime),
-    currentDayData.meals.lunch,
-    ...currentDayData.events.filter(e => e.startTime >= currentDayData.meals.lunch.startTime && e.startTime < currentDayData.meals.dinner.startTime),
-    currentDayData.meals.dinner,
-    ...currentDayData.events.filter(e => e.startTime >= currentDayData.meals.dinner.startTime)
-  ].sort((a, b) => a.startTime.localeCompare(b.startTime))
+  if (!currentDayData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Day not found</p>
+          <Button onClick={handleBackToResults}>Back to Results</Button>
+        </div>
+      </div>
+    )
+  }
 
-  // Get all trip events for iCal conversion - THIS IS WHAT YOU NEED!
-  const tripEventsForICal = getTripEventsForICal(itinerary)
-  
-  // Log the iCal data to console so you can see the format
-  console.log('Trip Events for iCal:', tripEventsForICal)
+  const allEvents = [
+    currentDayData.meals?.breakfast,
+    ...(currentDayData.events || []).filter(e => e.startTime < currentDayData.meals?.lunch?.startTime),
+    currentDayData.meals?.lunch,
+    ...(currentDayData.events || []).filter(e => e.startTime >= currentDayData.meals?.lunch?.startTime && e.startTime < currentDayData.meals?.dinner?.startTime),
+    currentDayData.meals?.dinner,
+    ...(currentDayData.events || []).filter(e => e.startTime >= currentDayData.meals?.dinner?.startTime)
+  ].filter(Boolean).sort((a, b) => a.startTime.localeCompare(b.startTime))
+
+  // The getTripEventsForICal function is available to use when you need it
+  // Example: const tripEventsForICal = getTripEventsForICal(itinerary)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -207,11 +215,21 @@ export default function ItineraryPage() {
           {/* Map Section */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="h-[600px] relative">
-              <Map3D 
-                points={getMapPoints()} 
-                showRoute={true}
-                animateRoute={false}
-              />
+              {getMapPoints().length > 0 ? (
+                <Map3D 
+                  points={getMapPoints()} 
+                  showRoute={true}
+                  animateRoute={false}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                  <div className="text-center p-6">
+                    <div className="text-gray-400 mb-2">🗺️</div>
+                    <p className="text-gray-600 text-sm">No map data available</p>
+                    <p className="text-gray-500 text-xs mt-1">Add coordinates to your itinerary to see the map</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -252,37 +270,37 @@ export default function ItineraryPage() {
               <CardContent className="p-4 max-h-[500px] overflow-y-auto">
                 <div className="space-y-3">
                   {allEvents.map((event, index) => (
-                    <div key={event.id} className="border border-gray-200 rounded-lg p-3 bg-white">
+                    <div key={event?.id || index} className="border border-gray-200 rounded-lg p-3 bg-white">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-start gap-3">
                           <div className="text-xs font-mono text-gray-500 min-w-[60px] mt-1">
-                            {formatEventTime(event.startTime, event.endTime)}
+                            {formatEventTime(event?.startTime || '', event?.endTime || '')}
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-medium text-gray-800 text-sm">{event.name}</h4>
-                            <p className="text-xs text-gray-600 mt-1">{event.description}</p>
+                            <h4 className="font-medium text-gray-800 text-sm">{event?.name || 'Unnamed Event'}</h4>
+                            <p className="text-xs text-gray-600 mt-1">{event?.description || ''}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className={`${getCategoryColor(event.category)} text-xs`}>
-                            {event.category}
+                          <Badge variant="secondary" className={`${getCategoryColor(event?.category || '')} text-xs`}>
+                            {event?.category || 'other'}
                           </Badge>
-                          <span className="text-xs text-gray-500">{event.estimatedCost}</span>
+                          <span className="text-xs text-gray-500">{event?.estimatedCost || 'N/A'}</span>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                         <MapPin className="h-3 w-3" />
-                        <span className="truncate">{event.address}</span>
+                        <span className="truncate">{event?.address || 'Address not available'}</span>
                       </div>
 
-                      {event.tips && event.tips.length > 0 && (
+                      {event?.tips && event.tips.length > 0 && (
                         <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
                           <strong>Tip:</strong> {event.tips[0]}
                         </div>
                       )}
 
-                      {event.travelTimeToNext && (
+                      {event?.travelTimeToNext && (
                         <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
                           <Navigation className="h-3 w-3" />
                           <span>
@@ -305,19 +323,19 @@ export default function ItineraryPage() {
                 </h4>
                 <div className="grid grid-cols-4 gap-2 text-xs">
                   <div className="text-center">
-                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown.activities}</div>
+                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown?.activities || 'N/A'}</div>
                     <div className="text-gray-600">Activities</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown.meals}</div>
+                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown?.meals || 'N/A'}</div>
                     <div className="text-gray-600">Meals</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown.transportation}</div>
+                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown?.transportation || 'N/A'}</div>
                     <div className="text-gray-600">Transport</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-medium text-blue-800">{currentDayData.dailyBudgetBreakdown.total}</div>
+                    <div className="font-medium text-blue-800">{currentDayData.dailyBudgetBreakdown?.total || 'N/A'}</div>
                     <div className="text-blue-600 font-medium">Total</div>
                   </div>
                 </div>

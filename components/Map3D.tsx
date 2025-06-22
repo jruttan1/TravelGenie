@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl, { Map as MapboxMap, Marker } from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 type Point = {
   lng: number;
@@ -21,7 +22,6 @@ type Map3DProps = {
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY as string;
 
 export default function Map3D({ points, showRoute = false, animateRoute = false }: Map3DProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MapboxMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const routeAnimationRef = useRef<number | null>(null);
@@ -35,10 +35,11 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
 
   console.log('Map3D received points:', points.length, points);
 
-  useEffect(() => {
-    if (map.current) return;
+  // Use callback ref to ensure container is available
+  const mapContainerRef = (container: HTMLDivElement | null) => {
+    if (!container || map.current) return;
 
-    // Check if API key is available
+    // Check if API key is available first
     if (!mapboxgl.accessToken) {
       console.error('Mapbox API key not found. Please set NEXT_PUBLIC_MAPBOX_API_KEY in your .env.local file');
       setMapError('Mapbox API key not configured. Please check your environment variables.');
@@ -46,35 +47,45 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
       return;
     }
 
-    console.log('Initializing map with API key:', mapboxgl.accessToken ? 'Found' : 'Missing');
+    console.log('Initializing map with container:', container);
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current!,
-      style: mapStyle,
-      center: points.length > 0 ? [points[0].lng, points[0].lat] : [-74.0445, 40.6892],
-      zoom: 12,
-      pitch: 0,
-      bearing: 0,
-      antialias: true,
-    });
+    try {
+      map.current = new mapboxgl.Map({
+        container: container,
+        style: mapStyle,
+        center: points.length > 0 ? [points[0].lng, points[0].lat] : [-74.0445, 40.6892],
+        zoom: 12,
+        pitch: 0,
+        bearing: 0,
+        antialias: true,
+      });
 
-    map.current.on('load', () => {
-      console.log('Map loaded, adding markers...');
+      map.current.on('load', () => {
+        console.log('Map loaded successfully');
+        setMapLoading(false);
+        addCustomHtmlMarkers();
+        add3DBuildings();
+        addSkyLayer();
+        if (showRoute) {
+          addRoute();
+        }
+      });
+
+      map.current.on('error', (e) => {
+        console.error('Map error:', e);
+        setMapError('Failed to load map. Please check your internet connection and API key.');
+        setMapLoading(false);
+      });
+
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      setMapError('Failed to initialize map');
       setMapLoading(false);
-      addCustomHtmlMarkers();
-      add3DBuildings();
-      addSkyLayer();
-      if (showRoute) {
-        addRoute();
-      }
-    });
+    }
+  };
 
-    map.current.on('error', (e) => {
-      console.error('Map error:', e);
-      setMapError('Failed to load map. Please check your internet connection and API key.');
-      setMapLoading(false);
-    });
-
+    // Cleanup effect
+  useEffect(() => {
     return () => {
       if (routeAnimationRef.current) {
         cancelAnimationFrame(routeAnimationRef.current);
@@ -92,7 +103,7 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
         addRoute();
       }
     }
-  }, [points, currentDay]);
+  }, [points, currentDay, showRoute]);
 
   // Animate pitch and bearing for 3D toggle
   useEffect(() => {
@@ -469,7 +480,7 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
         )}
       </div>
 
-      <div ref={mapContainer} className="w-full h-full" />
+      <div ref={mapContainerRef} className="w-full h-full" />
     </>
   );
 }
