@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -70,8 +69,6 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     wakeupTime: "",
     radius: "",
   })
-  
-  const router = useRouter()
 
   const handleInputChange = (field: keyof TripFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
