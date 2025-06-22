@@ -224,6 +224,42 @@ export default function TripResultsPage() {
         .filter(Boolean)
       localStorage.setItem('placeDetails', JSON.stringify(selectedDetails))
       
+      // Call the itinerary API to generate the itinerary
+      console.log('🚀 Calling itinerary API with data:', {
+        formData,
+        selectedPlaces: selectedDetails
+      })
+      
+      const response = await fetch('/api/itinerary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          formData,
+          selectedPlaces: selectedDetails
+        })
+      })
+
+      console.log('📡 API Response status:', response.status, response.statusText)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ API Error response:', errorText)
+        throw new Error(`Failed to create itinerary: ${response.statusText} - ${errorText}`)
+      }
+
+      const itinerary = await response.json()
+      console.log('✅ Received itinerary from API:', itinerary)
+      
+      // Extract the actual itinerary from the response structure
+      const actualItinerary = itinerary.itinerary || itinerary
+      console.log('📋 Extracted actual itinerary:', actualItinerary)
+      
+      // Save the generated itinerary to localStorage
+      localStorage.setItem('comprehensiveItinerary', JSON.stringify(actualItinerary))
+      console.log('💾 Saved itinerary to localStorage')
+      
       // Add a small delay to show the loading state
       await new Promise(resolve => setTimeout(resolve, 500))
       
@@ -399,15 +435,6 @@ export default function TripResultsPage() {
                 onClick={() => handlePlaceToggle(rec.place_name)}
               >
                 <CardContent className="p-6 h-full flex flex-col">
-                  <div className="flex items-start gap-3 mb-4">
-                    <Badge 
-                      variant="outline" 
-                      className="flex-shrink-0 bg-blue-100 text-blue-800"
-                    >
-                      #{index + 1}
-                    </Badge>
-                  </div>
-                  
                   {/* Place Image */}
                   <div className="mb-4">
                     {(() => {

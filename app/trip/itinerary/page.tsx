@@ -34,6 +34,9 @@ export default function ItineraryPage() {
     if (storedItinerary) {
       try {
         const parsedItinerary = JSON.parse(storedItinerary)
+        console.log('📋 Loaded itinerary from localStorage:', parsedItinerary)
+        console.log('📅 Days array:', parsedItinerary.days)
+        console.log('📊 Days length:', parsedItinerary.days?.length)
         setItinerary(parsedItinerary)
       } catch (error) {
         console.error('Error parsing stored itinerary:', error)
@@ -41,6 +44,7 @@ export default function ItineraryPage() {
       }
     } else {
       // No itinerary found, redirect back
+      console.log('❌ No itinerary found in localStorage')
       router.push('/trip/results')
     }
     setLoading(false)
@@ -163,6 +167,25 @@ export default function ItineraryPage() {
         </div>
       </div>
     )
+  }
+
+  // Validate itinerary structure
+  if (!itinerary.days || !Array.isArray(itinerary.days) || itinerary.days.length === 0) {
+    console.error('Invalid itinerary structure:', itinerary)
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Invalid itinerary data structure</p>
+          <p className="text-gray-500 text-sm mb-4">The itinerary could not be loaded properly.</p>
+          <Button onClick={handleBackToResults}>Back to Results</Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Ensure currentDay is within bounds
+  if (currentDay >= itinerary.days.length) {
+    setCurrentDay(0)
   }
 
   const currentDayData = itinerary.days[currentDay]
