@@ -223,13 +223,34 @@ export default function TripResultsPage() {
       const selectedDetails = selectedPlaces
         .map(placeName => placeDetails[placeName])
         .filter(Boolean)
+      
+      // Store place details
       localStorage.setItem('placeDetails', JSON.stringify(selectedDetails))
       
-      // Add a small delay to show the loading state
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Navigate to final itinerary page
-      router.push('/trip/itinerary')
+      // Call the itinerary API to generate comprehensive itinerary
+      const response = await fetch('/api/itinerary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          formData,
+          selectedPlaces: selectedDetails
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Store the comprehensive itinerary
+        localStorage.setItem('comprehensiveItinerary', JSON.stringify(data.itinerary))
+        
+        // Navigate to itinerary page
+        router.push('/trip/itinerary')
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create itinerary')
+      }
     } catch (error) {
       console.error('Error creating itinerary:', error)
       setItineraryError(error instanceof Error ? error.message : 'Failed to create itinerary. Please try again.')
