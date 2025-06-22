@@ -87,7 +87,7 @@ export default function PlanTrip() {
           <div className="glass-morphism rounded-3xl shadow-2xl overflow-visible">
             {/* Header */}
             <div className="p-8 border-b border-white/20 overflow-visible">
-              <div className="flex items-center space-x-3 mb-4 overflow-visible">
+              <div className="flex items-center space-x-2 mb-4 overflow-visible">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>

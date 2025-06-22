@@ -7,7 +7,39 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { MapPin, Calendar as CalendarIcon, DollarSign, Heart, Eye, ArrowRight, Loader2, Clock, Navigation } from "lucide-react"
+import { 
+  Location01Icon, 
+  Calendar01Icon, 
+  DollarSquareIcon, 
+  FavouriteIcon, 
+  ViewIcon, 
+  ArrowRight01Icon, 
+  Loading03Icon, 
+  Clock01Icon, 
+  Navigation01Icon,
+  // Budget icons - bulky/colorful
+  MoneyBag01Icon,
+  CreditCardIcon,
+  DiamondIcon,
+  // Preference icons - bulky/colorful
+  PaintBoardIcon,
+  Restaurant01Icon,
+  MountainIcon,
+  Building05Icon,
+  Leaf01Icon,
+  Moon02Icon,
+  ShoppingBasket01Icon,
+  Yoga01Icon,
+  // Wakeup time icons - bulky/colorful
+  SunriseIcon,
+  Sun01Icon,
+  SleepingIcon,
+  // Radius icons - bulky/colorful
+  Location01Icon as WalkingIcon,
+  Bus01Icon,
+  Car01Icon,
+  Airplane01Icon
+} from "hugeicons-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import type { DateRange } from "react-day-picker"
@@ -20,37 +52,118 @@ export interface TripFormData {
   preferences: string[]
   mustSee: string
   wakeupTime: string
-  radius: string
 }
 
 const budgetOptions = [
-  { value: "budget", label: "Budget-Friendly", description: "Under $100/day", icon: "💰" },
-  { value: "medium", label: "Moderate", description: "$100-250/day", icon: "💳" },
-  { value: "luxury", label: "Luxury", description: "$250+/day", icon: "💎" },
+  { 
+    value: "budget", 
+    label: "Budget-Friendly", 
+    description: "Under $100/day", 
+    icon: <MoneyBag01Icon className="h-8 w-8 text-green-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "medium", 
+    label: "Moderate", 
+    description: "$100-250/day", 
+    icon: <CreditCardIcon className="h-8 w-8 text-blue-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "luxury", 
+    label: "Luxury", 
+    description: "$250+/day", 
+    icon: <DiamondIcon className="h-8 w-8 text-purple-600" strokeWidth={2.5} />
+  },
 ]
 
 const preferenceOptions = [
-  { value: "art", label: "Art & Culture", icon: "🎨" },
-  { value: "food", label: "Food & Dining", icon: "🍽️" },
-  { value: "adventure", label: "Adventure", icon: "🏔️" },
-  { value: "history", label: "History", icon: "🏛️" },
-  { value: "nature", label: "Nature", icon: "🌿" },
-  { value: "nightlife", label: "Nightlife", icon: "🌃" },
-  { value: "shopping", label: "Shopping", icon: "🛍️" },
-  { value: "relaxation", label: "Relaxation", icon: "🧘" },
+  { 
+    value: "art", 
+    label: "Art & Culture", 
+    icon: <PaintBoardIcon className="h-7 w-7 text-pink-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "food", 
+    label: "Food & Dining", 
+    icon: <Restaurant01Icon className="h-7 w-7 text-orange-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "adventure", 
+    label: "Adventure", 
+    icon: <MountainIcon className="h-7 w-7 text-green-700" strokeWidth={2.5} />
+  },
+  { 
+    value: "history", 
+    label: "History", 
+    icon: <Building05Icon className="h-7 w-7 text-amber-700" strokeWidth={2.5} />
+  },
+  { 
+    value: "nature", 
+    label: "Nature", 
+    icon: <Leaf01Icon className="h-7 w-7 text-emerald-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "nightlife", 
+    label: "Nightlife", 
+    icon: <Moon02Icon className="h-7 w-7 text-indigo-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "shopping", 
+    label: "Shopping", 
+    icon: <ShoppingBasket01Icon className="h-7 w-7 text-rose-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "relaxation", 
+    label: "Relaxation", 
+    icon: <Yoga01Icon className="h-7 w-7 text-cyan-600" strokeWidth={2.5} />
+  },
 ]
 
 const wakeupTimeOptions = [
-  { value: "early", label: "Early Bird", description: "6:00 - 7:00 AM", icon: "🌅" },
-  { value: "morning", label: "Morning Person", description: "7:00 - 9:00 AM", icon: "☀️" },
-  { value: "late", label: "Leisurely Start", description: "9:00 - 11:00 AM", icon: "😴" },
+  { 
+    value: "early", 
+    label: "Early Bird", 
+    description: "6:00 - 7:00 AM", 
+    icon: <SunriseIcon className="h-8 w-8 text-orange-500" strokeWidth={2.5} />
+  },
+  { 
+    value: "morning", 
+    label: "Morning Person", 
+    description: "7:00 - 9:00 AM", 
+    icon: <Sun01Icon className="h-8 w-8 text-yellow-500" strokeWidth={2.5} />
+  },
+  { 
+    value: "late", 
+    label: "Leisurely Start", 
+    description: "9:00 - 11:00 AM", 
+    icon: <SleepingIcon className="h-8 w-8 text-purple-500" strokeWidth={2.5} />
+  },
 ]
 
 const radiusOptions = [
-  { value: "walkable", label: "Walking Distance", description: "Within 2-3 km", icon: "🚶" },
-  { value: "local", label: "Local Area", description: "Within 10-15 km", icon: "🚌" },
-  { value: "regional", label: "Regional", description: "Within 50 km", icon: "🚗" },
-  { value: "extended", label: "Extended Area", description: "Within 100 km", icon: "🚗" },
+  { 
+    value: "walkable", 
+    label: "Walking Distance", 
+    description: "Within 2-3 km", 
+    icon: <WalkingIcon className="h-8 w-8 text-green-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "local", 
+    label: "Local Area", 
+    description: "Within 10-15 km", 
+    icon: <Bus01Icon className="h-8 w-8 text-blue-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "regional", 
+    label: "Regional", 
+    description: "Within 50 km", 
+    icon: <Car01Icon className="h-8 w-8 text-indigo-600" strokeWidth={2.5} />
+  },
+  { 
+    value: "extended", 
+    label: "Extended Area", 
+    description: "Within 100 km", 
+    icon: <Airplane01Icon className="h-8 w-8 text-purple-600" strokeWidth={2.5} />
+  },
 ]
 
 interface TripFormProps {
@@ -67,7 +180,6 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     preferences: [],
     mustSee: "",
     wakeupTime: "",
-    radius: "",
   })
 
   const handleInputChange = (field: keyof TripFormData, value: string) => {
@@ -101,15 +213,14 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     formData.dateRange?.to && 
     formData.budget && 
     formData.preferences.length > 0 &&
-    formData.wakeupTime &&
-    formData.radius
+    formData.wakeupTime
 
   return (
     <form onSubmit={handleSubmit} className={cn("p-8 space-y-8 overflow-visible", className)}>
       {/* Destination */}
       <div className="animate-fade-in overflow-visible">
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-blue-600">
-          <MapPin className="h-5 w-5 text-blue-600" />
+          <Location01Icon className="h-5 w-5 text-blue-600" />
           <span>Where do you want to go?</span>
         </Label>
         <LocationAutocomplete
@@ -123,7 +234,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
       {/* Date Range */}
       <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.1s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-emerald-600">
-          <CalendarIcon className="h-5 w-5 text-emerald-600" />
+          <Calendar01Icon className="h-5 w-5 text-emerald-600" />
           <span>When are you traveling?</span>
         </Label>
         <div className="overflow-visible">
@@ -172,7 +283,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
       {/* Budget */}
       <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.2s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-indigo-600">
-          <DollarSign className="h-5 w-5 text-indigo-600" />
+          <DollarSquareIcon className="h-5 w-5 text-indigo-600" />
           <span>What's your budget?</span>
         </Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 overflow-visible">
@@ -203,7 +314,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
       {/* Preferences */}
       <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.3s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-purple-600">
-          <Heart className="h-5 w-5 text-purple-600" />
+          <FavouriteIcon className="h-5 w-5 text-purple-600" />
           <span>What are you interested in?</span>
         </Label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 overflow-visible">
@@ -213,7 +324,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
               type="button"
               onClick={() => handlePreferenceToggle(option.value)}
               className={cn(
-                "p-4 rounded-xl border-2 transition-all duration-200 text-center hover:scale-105 overflow-visible",
+                "p-4 rounded-xl border-2 transition-all duration-200 text-center hover:scale-105 overflow-visible flex flex-col items-center justify-center",
                 formData.preferences.includes(option.value)
                   ? "shadow-lg"
                   : "glass-morphism"
@@ -223,8 +334,8 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
                 backgroundColor: formData.preferences.includes(option.value) ? 'rgba(139, 92, 246, 0.1)' : undefined
               }}
             >
-              <div className="text-xl mb-1">{option.icon}</div>
-              <span className="text-sm font-medium text-gray-700">{option.label}</span>
+              <div className="mb-2 flex items-center justify-center">{option.icon}</div>
+              <span className="text-sm font-medium text-gray-700 text-center leading-tight">{option.label}</span>
             </button>
           ))}
         </div>
@@ -234,7 +345,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
       {/* Wakeup Time */}
       <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.4s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-orange-600">
-          <Clock className="h-5 w-5 text-orange-600" />
+          <Clock01Icon className="h-5 w-5 text-orange-600" />
           <span>What time do you like to start your day?</span>
         </Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 overflow-visible">
@@ -261,10 +372,11 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
           ))}
         </div>
       </div>
+
       {/* Must See */}
       <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.6s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-cyan-600">
-          <Eye className="h-5 w-5 text-cyan-600" />
+          <ViewIcon className="h-5 w-5 text-cyan-600" />
           <span>Any must-see places or experiences?</span>
         </Label>
         <Textarea
@@ -289,13 +401,13 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loading03Icon className="h-5 w-5 animate-spin" />
               <span>Creating Your Perfect Trip...</span>
             </>
           ) : (
             <>
               <span>Generate recommendations</span>
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              <ArrowRight01Icon className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </>
           )}
         </Button>
