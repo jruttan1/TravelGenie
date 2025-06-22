@@ -20,6 +20,11 @@ import {
   getItinerarySummary,
   getTripEventsForICal 
 } from "@/lib/itinerary-utils"
+import {createCalendar} from "@/lib/createICS"
+import { Zip01Icon } from "hugeicons-react"
+
+var JSZip = require("jszip");//idk what this does
+var zip = new JSZip();
 
 export default function ItineraryPage() {
   const [itinerary, setItinerary] = useState<ComprehensiveItinerary | null>(null)
@@ -49,6 +54,43 @@ export default function ItineraryPage() {
   const handleBackToResults = () => {
     router.push('/trip/results')
   }
+
+  const handleCreateICS = () =>
+  {
+    console.log("ICS Button pressed")
+    let dayItin;  //dayItin is a DayItinerary object
+    let dayEvents;  //dayEvents is an array of events+meals
+    let specificEvent;  //specificEvent is an event object
+    if(!itinerary)
+    {
+      console.log("No itinerary");
+      return;
+    }//checks that itinerary is not null
+
+    for(let i = 0; i < getAllDayItineraries.length; i++)//iterates through days in the whole trip
+    {
+      dayItin = itinerary.days[i];
+
+      //iterates through events in the day
+      for(let j = 0; j < getDayAllEvents.length; j++)
+      {
+        dayEvents = getDayAllEvents(itinerary, i+1);  //dayEvents is an array of events+meals
+        specificEvent = dayEvents[j];
+        console.log(dayEvents[j].name);
+
+        //replace this line with the line to upload the ICS to the zip
+        console.log(createCalendar(specificEvent.name, dayItin.date, specificEvent.startTime, specificEvent.endTime, specificEvent.address, specificEvent.description));
+
+        zip.file(specificEvent.name+".ics",createCalendar(specificEvent.name, dayItin.date, specificEvent.startTime, specificEvent.endTime, specificEvent.address, specificEvent.description));
+      }
+    }
+  }
+
+  const handleCreatePDFExport = () =>
+  {
+
+  }
+
 
   const handleCreateNewTrip = () => {
     // Clear all stored data and go back to form
@@ -202,6 +244,22 @@ export default function ItineraryPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Results
           </Button>
+
+          <Button
+            onClick={handleCreateICS}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Export to ICS
+          </Button>
+
+          
+          <Button
+            onClick={handleCreatePDFExport}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Export as PDF
+          </Button>
+
           <Button
             onClick={handleCreateNewTrip}
             className="bg-blue-600 hover:bg-blue-700"
