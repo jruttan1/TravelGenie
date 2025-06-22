@@ -8,6 +8,25 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, MapPin, DollarSign, ChevronLeft, ChevronRight, Navigation, AlertTriangle } from "lucide-react"
 import Map3D from "@/components/Map3D"
 import type { ComprehensiveItinerary, ItineraryEvent } from "@/lib/types"
+import { 
+  getDayItinerary, 
+  getAllDayItineraries, 
+  getDayEvents, 
+  getDayMeals, 
+  getDayAllEvents, 
+  getDaySchedule, 
+  getDayOverview, 
+  extractDayVariables, 
+  getItinerarySummary,
+  getTripEventsForICal 
+} from "@/lib/itinerary-utils"
+import {createCalendar} from "@/lib/createICS"
+import { Zip01Icon } from "hugeicons-react"
+
+
+var JSZip = require("jszip");//idk what this does
+var zip = new JSZip();
+
 export default function ItineraryPage() {
   const [itinerary, setItinerary] = useState<ComprehensiveItinerary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -57,6 +76,66 @@ export default function ItineraryPage() {
   const handleBackToResults = () => {
     router.push('/trip/results')
   }
+  
+  const handleCreateICS = () =>
+    {
+      
+      console.log("ICS Button pressed")
+      const zip = new JSZip();
+  
+      // Add your files here
+      //zip.file("testfile.txt", "hi!");
+      zip.file("readme.md", "# Upload these to your calendar to add all the events throughout your trip. Simple!");
+  
+      
+      let dayItin;  //dayItin is a DayItinerary object
+      let dayEvents;  //dayEvents is an array of events+meals
+      let specificEvent;  //specificEvent is an event object
+      if(!itinerary)
+        {
+          console.log("No itinerary");
+          return;
+        }//checks that itinerary is not null
+      
+      console.log("Itinerary length: " + itinerary.days.length)
+      for(let i = 0; i < itinerary.days.length; i++)//iterates through days in the whole trip
+        {
+          dayItin = itinerary.days[i];
+
+          console.log("NumEvents: " + dayItin.events.length)
+          //iterates through events in the day
+          for(let j = 0; j < getDayAllEvents(itinerary, i+1).length; j++)
+            {
+              dayEvents = getDayAllEvents(itinerary, i+1);  //dayEvents is an array of events+meals
+              specificEvent = dayEvents[j];
+              console.log(specificEvent.name);
+              
+              //replace this line with the line to upload the ICS to the zip
+              zip.file(specificEvent.name+".ics",createCalendar(specificEvent.name, dayItin.date, specificEvent.startTime, specificEvent.endTime, specificEvent.address, specificEvent.description));
+            }
+            console.log("i: " + i)
+        }
+
+      zip.generateAsync({ type: "blob" }).then((blob :Blob) =>
+        {
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "eventsCalendar.zip";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      
+        });
+  }
+
+  // const handleCreatePDFExport = () =>
+  // {
+
+  // }
+
 
   const handleCreateNewTrip = () => {
     clearAllTripData()
@@ -303,6 +382,22 @@ export default function ItineraryPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Results
           </Button>
+
+          <Button
+            onClick={handleCreateICS}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Export to ICS
+          </Button>
+
+          
+          {/* <Button
+            onClick={handleCreatePDFExport}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Export as PDF
+          </Button> */}
+
           <Button
             onClick={handleCreateNewTrip}
             className="bg-blue-600 hover:bg-blue-700"
