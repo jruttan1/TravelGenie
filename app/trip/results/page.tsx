@@ -229,7 +229,7 @@ export default function TripResultsPage() {
       await new Promise(resolve => setTimeout(resolve, 500))
       
       // Navigate to final itinerary page
-      router.push('/trip/final')
+      router.push('/trip/itinerary')
     } catch (error) {
       console.error('Error creating itinerary:', error)
       setItineraryError(error instanceof Error ? error.message : 'Failed to create itinerary. Please try again.')
