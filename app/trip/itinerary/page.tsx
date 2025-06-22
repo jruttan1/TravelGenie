@@ -1,49 +1,300 @@
-import { mockItinerary } from "@/lib/mock-data"
-import type { Itinerary } from "@/lib/types"
-import TripPageContent from "@/components/TripPageContent"
-import { MapPin } from "lucide-react"
+"use client"
 
-interface TripPageProps {
-  params: Promise<{
-    id: string
-  }>
-}
+import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, MapPin, Clock, DollarSign, Calendar, Users, ChevronLeft, ChevronRight, Navigation } from "lucide-react"
+import Map3D from "@/components/Map3D"
+import type { ComprehensiveItinerary, ItineraryEvent } from "@/lib/types"
 
-// In a real app, this would fetch from an API
-async function getItinerary(id: string): Promise<Itinerary | null> {
-  // Mock data for now
-  if (id === "paris-3days-art-food") {
-    return mockItinerary
+export default function ItineraryPage() {
+  const [itinerary, setItinerary] = useState<ComprehensiveItinerary | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [currentDay, setCurrentDay] = useState(0)
+  const [showMap, setShowMap] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    // Get itinerary from localStorage
+    const storedItinerary = localStorage.getItem('comprehensiveItinerary')
+    
+    if (storedItinerary) {
+      try {
+        const parsedItinerary = JSON.parse(storedItinerary)
+        setItinerary(parsedItinerary)
+      } catch (error) {
+        console.error('Error parsing stored itinerary:', error)
+        router.push('/trip/results')
+      }
+    } else {
+      // No itinerary found, redirect back
+      router.push('/trip/results')
+    }
+    setLoading(false)
+  }, [router])
+
+  const handleBackToResults = () => {
+    router.push('/trip/results')
   }
-  return null
-}
 
-export default async function TripPage({ params }: TripPageProps) {
-  const { id } = await params
-  const itinerary = await getItinerary(id)
+  const handleCreateNewTrip = () => {
+    // Clear all stored data and go back to form
+    localStorage.removeItem('tripRecommendations')
+    localStorage.removeItem('tripFormData')
+    localStorage.removeItem('placeDetails')
+    localStorage.removeItem('comprehensiveItinerary')
+    router.push('/plan')
+  }
 
-  if (!itinerary) {
+  const nextDay = () => {
+    if (itinerary && currentDay < itinerary.days.length - 1) {
+      setCurrentDay(currentDay + 1)
+    }
+  }
+
+  const prevDay = () => {
+    if (currentDay > 0) {
+      setCurrentDay(currentDay - 1)
+    }
+  }
+
+  const goToDay = (index: number) => {
+    setCurrentDay(index)
+  }
+
+  // Convert itinerary events to map points
+  const getMapPoints = () => {
+    if (!itinerary) return []
+    
+    const points: any[] = []
+    
+    itinerary.days.forEach((day, dayIndex) => {
+      // Add meals
+      Object.values(day.meals).forEach(meal => {
+        points.push({
+          lng: meal.coordinates.lng,
+          lat: meal.coordinates.lat,
+          name: meal.name,
+          category: meal.category,
+          time: meal.startTime,
+          day: dayIndex + 1
+        })
+      })
+      
+      // Add activities
+      day.events.forEach(event => {
+        points.push({
+          lng: event.coordinates.lng,
+          lat: event.coordinates.lat,
+          name: event.name,
+          category: event.category,
+          time: event.startTime,
+          day: dayIndex + 1
+        })
+      })
+    })
+    
+    return points
+  }
+
+  const formatEventTime = (startTime: string, endTime: string) => {
+    return `${startTime} - ${endTime}`
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'breakfast':
+        return 'bg-orange-100 text-orange-800'
+      case 'lunch':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'dinner':
+        return 'bg-amber-100 text-amber-800'
+      case 'activity':
+        return 'bg-blue-100 text-blue-800'
+      case 'sightseeing':
+        return 'bg-purple-100 text-purple-800'
+      case 'entertainment':
+        return 'bg-red-100 text-red-800'
+      case 'shopping':
+        return 'bg-green-100 text-green-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen dotted-background relative overflow-visible flex items-center justify-center">
-        <div className="bokeh-container">
-          <div className="bokeh bokeh-1"></div>
-          <div className="bokeh bokeh-2"></div>
-          <div className="bokeh bokeh-3"></div>
-          <div className="bokeh bokeh-4"></div>
-          <div className="bokeh bokeh-5"></div>
-          <div className="bokeh bokeh-6"></div>
-        </div>
-        
-        <div className="relative z-10 text-center glass-morphism p-12 rounded-3xl shadow-2xl max-w-md mx-4 overflow-visible">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 bg-gradient-to-br from-blue-500 to-indigo-600">
-            <MapPin className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold mb-4 gradient-text-modern">Trip Not Found</h1>
-          <p className="leading-relaxed text-gray-600">The requested itinerary could not be found.</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your itinerary...</p>
         </div>
       </div>
     )
   }
 
-  return <TripPageContent itinerary={itinerary} />
+  if (!itinerary) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">No itinerary found</p>
+          <Button onClick={handleBackToResults}>Back to Results</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const currentDayData = itinerary.days[currentDay]
+  const allEvents = [
+    currentDayData.meals.breakfast,
+    ...currentDayData.events.filter(e => e.startTime < currentDayData.meals.lunch.startTime),
+    currentDayData.meals.lunch,
+    ...currentDayData.events.filter(e => e.startTime >= currentDayData.meals.lunch.startTime && e.startTime < currentDayData.meals.dinner.startTime),
+    currentDayData.meals.dinner,
+    ...currentDayData.events.filter(e => e.startTime >= currentDayData.meals.dinner.startTime)
+  ].sort((a, b) => a.startTime.localeCompare(b.startTime))
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            variant="ghost"
+            onClick={handleBackToResults}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Results
+          </Button>
+          <Button
+            onClick={handleCreateNewTrip}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Plan New Trip
+          </Button>
+        </div>
+
+        {showMap ? (
+          /* Map View */
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="h-[600px] relative">
+              <Map3D 
+                points={getMapPoints()} 
+                showRoute={true}
+                animateRoute={false}
+              />
+            </div>
+          </div>
+        ) : (
+          /* Itinerary View */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Day Details */}
+            <div className="lg:col-span-2">
+              <Card className="glass-morphism border-white/20">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xl">Day {currentDayData.dayNumber}</CardTitle>
+                      <p className="text-gray-600">{currentDayData.date} • {currentDayData.theme}</p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={prevDay}
+                        disabled={currentDay === 0}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={nextDay}
+                        disabled={currentDay === itinerary.days.length - 1}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {allEvents.map((event, index) => (
+                      <div key={event.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className="text-sm font-mono text-gray-500 min-w-[80px]">
+                              {formatEventTime(event.startTime, event.endTime)}
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-800">{event.name}</h4>
+                              <p className="text-sm text-gray-600">{event.description}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className={getCategoryColor(event.category)}>
+                              {event.category}
+                            </Badge>
+                            <span className="text-sm text-gray-500">{event.estimatedCost}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                          <MapPin className="h-4 w-4" />
+                          <span>{event.address}</span>
+                        </div>
+
+                        {event.tips && event.tips.length > 0 && (
+                          <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
+                            <strong>Tip:</strong> {event.tips[0]}
+                          </div>
+                        )}
+
+                        {event.travelTimeToNext && (
+                          <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                            <Navigation className="h-4 w-4" />
+                            <span>
+                              {event.travelTimeToNext} min walk to next location 
+                              ({event.travelDistanceToNext?.toFixed(1)} km)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+                {/* Budget Breakdown */}
+               <div className="mt-1 p-4 bg-gray-50 rounded-lg px-8 py-4">
+                    <h4 className="font-medium text-gray-800 mb-2">Daily Budget</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Activities:</span>
+                        <span>{currentDayData.dailyBudgetBreakdown.activities}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Meals:</span>
+                        <span>{currentDayData.dailyBudgetBreakdown.meals}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Transport:</span>
+                        <span>{currentDayData.dailyBudgetBreakdown.transportation}</span>
+                      </div>
+                      <hr className="my-2" />
+                      <div className="flex justify-between font-medium">
+                        <span>Total:</span>
+                        <span>{currentDayData.dailyBudgetBreakdown.total}</span>
+                      </div>
+                    </div>
+                  </div>
+              </Card>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
