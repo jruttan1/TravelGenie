@@ -1,62 +1,107 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, MapPin, Clock, DollarSign, Calendar, Users, ChevronLeft, ChevronRight, Navigation } from "lucide-react"
+import { ArrowLeft, MapPin, DollarSign, ChevronLeft, ChevronRight, Navigation, AlertTriangle } from "lucide-react"
 import Map3D from "@/components/Map3D"
 import type { ComprehensiveItinerary, ItineraryEvent } from "@/lib/types"
-import { 
-  getDayItinerary, 
-  getAllDayItineraries, 
-  getDayEvents, 
-  getDayMeals, 
-  getDayAllEvents, 
-  getDaySchedule, 
-  getDayOverview, 
-  extractDayVariables, 
-  getItinerarySummary,
-  getTripEventsForICal 
-} from "@/lib/itinerary-utils"
 
 export default function ItineraryPage() {
   const [itinerary, setItinerary] = useState<ComprehensiveItinerary | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentDay, setCurrentDay] = useState(0)
+  const [dataError, setDataError] = useState<string | null>(null)
   const router = useRouter()
 
-  useEffect(() => {
-    // Get itinerary from localStorage
-    const storedItinerary = localStorage.getItem('comprehensiveItinerary')
-    
-    if (storedItinerary) {
-      try {
-        const parsedItinerary = JSON.parse(storedItinerary)
-        setItinerary(parsedItinerary)
-      } catch (error) {
-        console.error('Error parsing stored itinerary:', error)
-        router.push('/trip/results')
-      }
-    } else {
-      // No itinerary found, redirect back
-      router.push('/trip/results')
+  // Generate a unique key for the current trip based on form data
+  const generateTripKey = (formData: any) => {
+    if (!formData) return null
+    const keyData = {
+      destination: formData.destination,
+      dateRange: formData.dateRange,
+      budget: formData.budget,
+      preferences: formData.preferences?.sort(),
+      wakeupTime: formData.wakeupTime
     }
-    setLoading(false)
-  }, [router])
+    return btoa(JSON.stringify(keyData)).slice(0, 16) // Short hash
+  }
+
+  useEffect(() => {
+    const loadItinerary = () => {
+      try {
+        // Get stored comprehensive itinerary
+        const storedItinerary = localStorage.getItem('comprehensiveItinerary')
+        
+        if (!storedItinerary) {
+          console.log('No comprehensive itinerary found, redirecting to results')
+          setDataError('No itinerary data found. Please generate a new trip from the results page.')
+          setLoading(false)
+          return
+        }
+
+        // Parse itinerary
+        let parsedItinerary: ComprehensiveItinerary
+        try {
+          parsedItinerary = JSON.parse(storedItinerary)
+          console.log('✅ Loaded comprehensive itinerary:', parsedItinerary.tripTitle)
+        } catch (error) {
+          console.error('Error parsing stored itinerary:', error)
+          setDataError('Invalid itinerary data. Please generate a new trip.')
+          setLoading(false)
+          return
+        }
+
+        // Basic validation - just check that we have days
+        if (!parsedItinerary.days || !Array.isArray(parsedItinerary.days) || parsedItinerary.days.length === 0) {
+          console.error('Invalid itinerary structure - no days found')
+          setDataError('Invalid itinerary structure. Please generate a new trip.')
+          setLoading(false)
+          return
+        }
+
+        console.log(`📅 Itinerary loaded: ${parsedItinerary.days.length} days for ${parsedItinerary.destination}`)
+        
+        setItinerary(parsedItinerary)
+        setDataError(null)
+        
+      } catch (error) {
+        console.error('Error loading itinerary:', error)
+        setDataError('Error loading itinerary data. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadItinerary()
+  }, [])
+
+  const clearAllTripData = () => {
+    localStorage.removeItem('tripRecommendations')
+    localStorage.removeItem('tripFormData')
+    localStorage.removeItem('placeDetails')
+    localStorage.removeItem('comprehensiveItinerary')
+    localStorage.removeItem('tripId')
+  }
 
   const handleBackToResults = () => {
     router.push('/trip/results')
   }
 
   const handleCreateNewTrip = () => {
-    // Clear all stored data and go back to form
-    localStorage.removeItem('tripRecommendations')
-    localStorage.removeItem('tripFormData')
-    localStorage.removeItem('placeDetails')
-    localStorage.removeItem('comprehensiveItinerary')
+    clearAllTripData()
     router.push('/plan')
+  }
+
+  const handleRetryLoad = () => {
+    setLoading(true)
+    setDataError(null)
+    // Force reload by clearing and reloading
+    setTimeout(() => {
+      window.location.reload()
+    }, 100)
   }
 
   const nextDay = () => {
@@ -75,46 +120,68 @@ export default function ItineraryPage() {
     setCurrentDay(index)
   }
 
-  // Convert itinerary events to map points
-  const getMapPoints = () => {
-    if (!itinerary) {
-      console.log('No itinerary found for map points')
-      return []
-    }
-    
+  // Extract and validate map points
+  const extractMapPoints = (itinerary: ComprehensiveItinerary) => {
     const points: any[] = []
     
     itinerary.days.forEach((day, dayIndex) => {
-      // Add meals
-      Object.values(day.meals).forEach(meal => {
-        if (meal?.coordinates?.lng && meal?.coordinates?.lat) {
-          points.push({
-            lng: meal.coordinates.lng,
-            lat: meal.coordinates.lat,
-            name: meal.name,
-            category: meal.category,
-            time: meal.startTime,
-            day: dayIndex + 1
-          })
-        }
-      })
+      // Add meals with coordinate validation
+      if (day.meals) {
+        [day.meals.breakfast, day.meals.lunch, day.meals.dinner].forEach((meal: ItineraryEvent | undefined) => {
+          if (meal?.coordinates?.lng && meal?.coordinates?.lat) {
+            const lng = Number(meal.coordinates.lng)
+            const lat = Number(meal.coordinates.lat)
+            
+            // Validate coordinates are reasonable (basic sanity check)
+            if (!isNaN(lng) && !isNaN(lat) && lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
+              points.push({
+                lng,
+                lat,
+                name: meal.name || 'Unnamed Meal',
+                category: meal.category || 'meal',
+                time: meal.startTime,
+                day: dayIndex + 1
+              })
+            }
+          }
+        })
+      }
       
-      // Add activities
-      day.events.forEach(event => {
-        if (event?.coordinates?.lng && event?.coordinates?.lat) {
-          points.push({
-            lng: event.coordinates.lng,
-            lat: event.coordinates.lat,
-            name: event.name,
-            category: event.category,
-            time: event.startTime,
-            day: dayIndex + 1
-          })
-        }
-      })
+      // Add activities with coordinate validation
+      if (day.events && day.events.length > 0) {
+        day.events.forEach((event: ItineraryEvent) => {
+          if (event?.coordinates?.lng && event?.coordinates?.lat) {
+            const lng = Number(event.coordinates.lng)
+            const lat = Number(event.coordinates.lat)
+            
+            // Validate coordinates are reasonable
+            if (!isNaN(lng) && !isNaN(lat) && lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
+              points.push({
+                lng,
+                lat,
+                name: event.name || 'Unnamed Event',
+                category: event.category || 'activity',
+                time: event.startTime,
+                day: dayIndex + 1
+              })
+            }
+          }
+        })
+      }
     })
     
-    console.log('Map points generated:', points.length, points)
+    return points
+  }
+
+  // Convert itinerary events to map points
+  const getMapPoints = () => {
+    if (!itinerary) {
+      return []
+    }
+    
+    const points = extractMapPoints(itinerary)
+    console.log('🗺️ Passing', points.length, 'points to Map3D component')
+    
     return points
   }
 
@@ -149,6 +216,29 @@ export default function ItineraryPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your itinerary...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (dataError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Data Issue Detected</h2>
+          <p className="text-gray-600 mb-6">{dataError}</p>
+          <div className="space-y-3">
+            <Button onClick={handleCreateNewTrip} className="w-full bg-blue-600 hover:bg-blue-700">
+              Plan New Trip
+            </Button>
+            <Button onClick={handleBackToResults} variant="outline" className="w-full">
+              Back to Results
+            </Button>
+            <Button onClick={handleRetryLoad} variant="ghost" className="w-full">
+              Retry Loading
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -214,7 +304,6 @@ export default function ItineraryPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Map Section */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="h-[600px] relative">
               {getMapPoints().length > 0 ? (
                 <Map3D 
                   points={getMapPoints()} 
@@ -230,7 +319,6 @@ export default function ItineraryPage() {
                   </div>
                 </div>
               )}
-            </div>
           </div>
 
           {/* Itinerary Section */}

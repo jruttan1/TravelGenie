@@ -109,7 +109,7 @@ function formatDateToString(date: Date | string): string {
   }
   // If it's a Date object, convert to ISO string and extract date part
   return date.toISOString().split('T')[0]
-}
+  }
 
 export async function POST(request: NextRequest) {
   try {

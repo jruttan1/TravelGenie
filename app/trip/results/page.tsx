@@ -222,10 +222,44 @@ export default function TripResultsPage() {
       const selectedDetails = selectedPlaces
         .map(placeName => placeDetails[placeName])
         .filter(Boolean)
+
+      if (selectedDetails.length === 0) {
+        throw new Error('No valid place details found for selected places')
+      }
+
+      console.log('Selected place details:', selectedDetails.length, 'places')
+      
+      // Store place details for reference
       localStorage.setItem('placeDetails', JSON.stringify(selectedDetails))
       
-      // Add a small delay to show the loading state
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Call the itinerary API to generate comprehensive itinerary
+      const response = await fetch('/api/itinerary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          formData,
+          selectedPlaces: selectedDetails
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (!result.success || !result.itinerary) {
+        throw new Error('Invalid response from itinerary API')
+      }
+
+      console.log('✅ Comprehensive itinerary generated successfully')
+      console.log('Itinerary:', result.itinerary)
+      
+      // Store the comprehensive itinerary in localStorage
+      localStorage.setItem('comprehensiveItinerary', JSON.stringify(result.itinerary))
       
       // Navigate to itinerary page
       router.push('/trip/itinerary')
