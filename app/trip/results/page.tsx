@@ -134,7 +134,7 @@ export default function TripResultsPage() {
     loadTripData()
   }, [router])
 
-  // Filter recommendations to only show those with available details
+  // Filter recommendations to only show those with available details and remove duplicates
   useEffect(() => {
     const availableRecommendations = recommendations.filter(rec => {
       const details = placeDetails[rec.place_name]
@@ -144,7 +144,35 @@ export default function TripResultsPage() {
       return isLoading || (details && details.formatted_address)
     })
     
-    setFilteredRecommendations(availableRecommendations)
+    // Remove duplicates based on address and name
+    const uniqueRecommendations = availableRecommendations.filter((rec, index, array) => {
+      const details = placeDetails[rec.place_name]
+      if (!details || !details.formatted_address) {
+        // If no details yet, keep it (it's still loading)
+        return true
+      }
+      
+      // Check if this address or name has already appeared earlier in the array
+      const isDuplicate = array.slice(0, index).some(earlierRec => {
+        const earlierDetails = placeDetails[earlierRec.place_name]
+        if (!earlierDetails || !earlierDetails.formatted_address) {
+          return false
+        }
+        
+        // Check for duplicate address (case-insensitive)
+        const addressMatch = earlierDetails.formatted_address.toLowerCase() === details.formatted_address.toLowerCase()
+        
+        // Check for duplicate name (case-insensitive, with some tolerance for minor differences)
+        const nameMatch = earlierRec.place_name.toLowerCase().replace(/[^\w\s]/g, '') === 
+                         rec.place_name.toLowerCase().replace(/[^\w\s]/g, '')
+        
+        return addressMatch || nameMatch
+      })
+      
+      return !isDuplicate
+    })
+    
+    setFilteredRecommendations(uniqueRecommendations)
   }, [recommendations, placeDetails, loadingDetails])
 
   const handleBackToForm = () => {
@@ -167,7 +195,7 @@ export default function TripResultsPage() {
   }
 
   const handleSelectAll = () => {
-    setSelectedPlaces(recommendations.map(rec => rec.place_name))
+    setSelectedPlaces(filteredRecommendations.map(rec => rec.place_name))
   }
 
   const handleDeselectAll = () => {
@@ -232,7 +260,12 @@ export default function TripResultsPage() {
       // Store place details for reference
       localStorage.setItem('placeDetails', JSON.stringify(selectedDetails))
       
-      // Call the itinerary API to generate comprehensive itinerary
+      // Call the itinerary API to generate the itinerary
+      console.log('🚀 Calling itinerary API with data:', {
+        formData,
+        selectedPlaces: selectedDetails
+      })
+      
       const response = await fetch('/api/itinerary', {
         method: 'POST',
         headers: {
@@ -244,22 +277,27 @@ export default function TripResultsPage() {
         })
       })
 
+      console.log('📡 API Response status:', response.status, response.statusText)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+        const errorText = await response.text()
+        console.error('❌ API Error response:', errorText)
+        throw new Error(`Failed to create itinerary: ${response.statusText} - ${errorText}`)
       }
 
-      const result = await response.json()
+      const itinerary = await response.json()
+      console.log('✅ Received itinerary from API:', itinerary)
       
-      if (!result.success || !result.itinerary) {
-        throw new Error('Invalid response from itinerary API')
-      }
-
-      console.log('✅ Comprehensive itinerary generated successfully')
-      console.log('Itinerary:', result.itinerary)
+      // Extract the actual itinerary from the response structure
+      const actualItinerary = itinerary.itinerary || itinerary
+      console.log('📋 Extracted actual itinerary:', actualItinerary)
       
-      // Store the comprehensive itinerary in localStorage
-      localStorage.setItem('comprehensiveItinerary', JSON.stringify(result.itinerary))
+      // Save the generated itinerary to localStorage
+      localStorage.setItem('comprehensiveItinerary', JSON.stringify(actualItinerary))
+      console.log('💾 Saved itinerary to localStorage')
+      
+      // Add a small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 500))
       
       // Navigate to itinerary page
       router.push('/trip/itinerary')
@@ -400,6 +438,11 @@ export default function TripResultsPage() {
               <h2 className="text-2xl font-bold text-gray-800">
                 Select Your Places
               </h2>
+              {recommendations.length > filteredRecommendations.length && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                  {recommendations.length - filteredRecommendations.length} duplicates removed
+                </Badge>
+              )}
             </div>
             <div className="flex gap-2">
               <Button
@@ -433,15 +476,6 @@ export default function TripResultsPage() {
                 onClick={() => handlePlaceToggle(rec.place_name)}
               >
                 <CardContent className="p-6 h-full flex flex-col">
-                  <div className="flex items-start gap-3 mb-4">
-                    <Badge 
-                      variant="outline" 
-                      className="flex-shrink-0 bg-blue-100 text-blue-800"
-                    >
-                      #{index + 1}
-                    </Badge>
-                  </div>
-                  
                   {/* Place Image */}
                   <div className="mb-4">
                     {(() => {

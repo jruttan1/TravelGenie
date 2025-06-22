@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     
     // Format selected places for the prompt
     const selectedPlacesText = selectedPlaces.map(place => 
-      `- ${place.name}: ${place.formatted_address} (Rating: ${place.rating || 'N/A'}, Price Level: ${place.price_level || 'N/A'})`
+      `- ${place.name}: ${place.formatted_address} (Rating: ${place.rating || 'N/A'}, Price Level: ${place.price_level || 'N/A'}, Coordinates: ${place.geometry?.location?.lat}, ${place.geometry?.location?.lng})`
     ).join('\n')
 
     console.log('🏢 Selected places for itinerary:')
@@ -186,16 +186,48 @@ export async function POST(request: NextRequest) {
     // Create the AI prompt
     const prompt = `Create a ${dayAmount}-day itinerary for ${formData.destination} (${startDate} to ${endDate}).
 
-SELECTED PLACES TO INCLUDE:
+PRIMARY FOCUS: This itinerary MUST be built AROUND the user's selected places. These are the user's specific choices and should be the main attractions of each day.
+
+DUPLICATE PREVENTION: This is a ${dayAmount}-day itinerary where each place, restaurant, and activity should appear only ONCE across all days. Do not repeat any location names, restaurant names, or activity names across different days.
+
+USER'S SELECTED PLACES (THESE ARE THE MAIN ATTRACTIONS):
 ${selectedPlacesText}
 
-REQUIREMENTS:
+CRITICAL REQUIREMENTS:
+1. BUILD THE ITINERARY AROUND THESE SELECTED PLACES - they are the core of the trip
+2. Each selected place should be a major activity/attraction for that day
+3. Use the EXACT names, addresses, and coordinates provided above
+4. Add meals and additional activities that complement these selected places
+5. Do NOT replace these selected places with generic suggestions
+
+ITINERARY STRUCTURE:
+- LOCATION: ${formData.destination} ONLY
 - Budget: ${budgetDescription}
 - Interests: ${preferencesText}
 - Start time: ${wakeupTimeText}
-- Include ALL selected places across ${dayAmount} days
-- Add breakfast, lunch, dinner each day
-- Real coordinates for all locations${mustSeeText}
+- Duration: ${dayAmount} days
+
+DAILY PLANNING APPROACH:
+- Day 1: Focus on selected places 1-${Math.ceil(selectedPlaces.length / dayAmount)}
+- Day 2: Focus on selected places ${Math.ceil(selectedPlaces.length / dayAmount) + 1}-${Math.ceil(selectedPlaces.length / dayAmount) * 2}
+- Continue this pattern for all days
+- Add breakfast, lunch, dinner near the selected places
+- Add 1-2 complementary activities per day that enhance the selected places experience
+- IMPORTANT: Keep track of all places mentioned so far and avoid repeating any location, restaurant, or activity name across different days
+- Each day should feature completely unique places and activities (except for the selected places which are distributed across days)
+
+MANDATORY RULES:
+- Include ALL ${selectedPlaces.length} selected places as major activities
+- Use exact names and addresses from the selected places list
+- Use exact coordinates: lat: X, lng: Y from the selected places
+- All activities must be in ${formData.destination}
+- Every event must have valid coordinates
+- Do not suggest places from other cities
+- NO DUPLICATE EVENTS: Each place, restaurant, or activity should appear only ONCE across the entire ${dayAmount}-day itinerary
+- Track all events across all days to ensure no repetition of the same location or activity
+- If suggesting restaurants, ensure each restaurant name appears only once
+- If suggesting activities, ensure each activity name appears only once
+- The only exceptions are generic meal categories (breakfast, lunch, dinner) which can have different restaurants each day${mustSeeText}
 
 Return ONLY valid JSON:
 {
@@ -403,6 +435,63 @@ Return ONLY valid JSON:
         totalCost: aiItinerary.total_estimated_cost
       })
       
+      // Validate destination matches
+      console.log('🔍 Validating destination match...')
+      const requestedDestination = formData.destination.toLowerCase()
+      const generatedDestination = aiItinerary.destination?.toLowerCase() || ''
+      
+      if (generatedDestination && !generatedDestination.includes(requestedDestination.split(',')[0].trim())) {
+        console.log(`⚠️ DESTINATION MISMATCH: Requested "${formData.destination}" but AI generated "${aiItinerary.destination}"`)
+        console.log('🔧 Attempting to fix destination in generated itinerary...')
+        aiItinerary.destination = formData.destination
+      } else {
+        console.log(`✅ Destination match confirmed: "${aiItinerary.destination}"`)
+      }
+      
+      // Validate that selected places are included in the itinerary
+      console.log('🔍 Validating selected places inclusion...')
+      const selectedPlaceNames = selectedPlaces.map(place => place.name.toLowerCase())
+      const itineraryPlaceNames: string[] = []
+      
+      // Extract all place names from the generated itinerary
+      if (aiItinerary.days) {
+        aiItinerary.days.forEach((day: any) => {
+          if (day.events) {
+            day.events.forEach((event: any) => {
+              itineraryPlaceNames.push(event.name.toLowerCase())
+            })
+          }
+        })
+      }
+      
+      // Check which selected places are included
+      const includedPlaces = selectedPlaceNames.filter(selectedName => 
+        itineraryPlaceNames.some(itineraryName => 
+          itineraryName.includes(selectedName) || selectedName.includes(itineraryName)
+        )
+      )
+      
+      const missingPlaces = selectedPlaceNames.filter(selectedName => 
+        !itineraryPlaceNames.some(itineraryName => 
+          itineraryName.includes(selectedName) || selectedName.includes(itineraryName)
+        )
+      )
+      
+      console.log(`✅ Included ${includedPlaces.length}/${selectedPlaces.length} selected places:`, includedPlaces)
+      if (missingPlaces.length > 0) {
+        console.log(`⚠️ Missing ${missingPlaces.length} selected places:`, missingPlaces)
+        
+        // Automatically inject missing selected places into the itinerary
+        console.log('🔧 Injecting missing selected places into itinerary...')
+        aiItinerary = injectMissingSelectedPlaces(aiItinerary, selectedPlaces, missingPlaces, dayAmount)
+        console.log('✅ Missing places injected successfully')
+        
+        // Prioritize selected places in the itinerary order
+        console.log('🔄 Prioritizing selected places in itinerary...')
+        aiItinerary = prioritizeSelectedPlaces(aiItinerary, selectedPlaces)
+        console.log('✅ Selected places prioritized successfully')
+      }
+      
     } catch (parseError) {
       console.error('❌ Failed to parse JSON response:', parseError)
       console.error('🔍 Raw response (first 1000 chars):', responseText.substring(0, 1000))
@@ -423,6 +512,43 @@ Return ONLY valid JSON:
     
     // Post-process the itinerary to calculate travel times and distances
     const processedItinerary = await processItinerary(aiItinerary)
+    
+    // Final validation - check if all selected places are included in the processed itinerary
+    console.log('🔍 Final validation: Checking if all selected places are included...')
+    const finalSelectedPlaceNames = selectedPlaces.map(place => place.name.toLowerCase())
+    const finalItineraryPlaceNames: string[] = []
+    
+    processedItinerary.days.forEach((day: any) => {
+      // Check events
+      day.events.forEach((event: any) => {
+        finalItineraryPlaceNames.push(event.name.toLowerCase())
+      })
+      // Check meals
+      Object.values(day.meals).forEach((meal: any) => {
+        if (meal) {
+          finalItineraryPlaceNames.push(meal.name.toLowerCase())
+        }
+      })
+    })
+    
+    const finalIncludedPlaces = finalSelectedPlaceNames.filter(selectedName => 
+      finalItineraryPlaceNames.some(itineraryName => 
+        itineraryName.includes(selectedName) || selectedName.includes(itineraryName)
+      )
+    )
+    
+    const finalMissingPlaces = finalSelectedPlaceNames.filter(selectedName => 
+      !finalItineraryPlaceNames.some(itineraryName => 
+        itineraryName.includes(selectedName) || selectedName.includes(itineraryName)
+      )
+    )
+    
+    console.log(`✅ FINAL RESULT: ${finalIncludedPlaces.length}/${selectedPlaces.length} selected places included in final itinerary`)
+    if (finalMissingPlaces.length > 0) {
+      console.log(`❌ FINAL MISSING: ${finalMissingPlaces.length} places still missing:`, finalMissingPlaces)
+    } else {
+      console.log('🎉 SUCCESS: All selected places are included in the final itinerary!')
+    }
     
     console.log('✅ Itinerary processing completed successfully')
 
@@ -459,6 +585,84 @@ Return ONLY valid JSON:
   }
 }
 
+// Function to inject missing selected places into the itinerary
+function injectMissingSelectedPlaces(itinerary: any, selectedPlaces: PlaceDetails[], missingPlaceNames: string[], dayAmount: number): any {
+  const missingPlaces = selectedPlaces.filter(place => 
+    missingPlaceNames.includes(place.name.toLowerCase())
+  )
+  
+  console.log(`🔧 Injecting ${missingPlaces.length} missing places into itinerary`)
+  
+  // Calculate how many places per day for better distribution
+  const placesPerDay = Math.ceil(selectedPlaces.length / dayAmount)
+  
+  // Distribute missing places across days more intelligently
+  missingPlaces.forEach((place, index) => {
+    const targetDayIndex = Math.min(index, dayAmount - 1) // Ensure we don't exceed day count
+    const targetDay = itinerary.days[targetDayIndex]
+    
+    if (targetDay && targetDay.events) {
+      // Create a prominent event for the missing place (make it a major activity)
+      const newEvent = {
+        id: `selected-place-${place.place_id}`,
+        name: place.name,
+        address: place.formatted_address,
+        coordinates: {
+          lat: place.geometry.location.lat,
+          lng: place.geometry.location.lng
+        },
+        start_time: "10:00", // Make it a morning/afternoon activity
+        end_time: "12:00",   // 2 hours duration
+        duration: 120,       // 2 hours
+        category: "activity",
+        description: `Visit ${place.name} - A must-see attraction in ${itinerary.destination}. ${place.formatted_address}`,
+        estimated_cost: place.price_level ? `$${place.price_level * 10}-${place.price_level * 25}` : "$0",
+        tips: [
+          `This is one of your selected must-visit places in ${itinerary.destination}`,
+          `Plan to spend 1-2 hours exploring ${place.name}`,
+          place.rating ? `Highly rated: ${place.rating}/5 stars` : "Popular local attraction"
+        ]
+      }
+      
+      // Insert the event at the beginning of the day's events to make it prominent
+      targetDay.events.unshift(newEvent)
+      
+      console.log(`✅ Injected ${place.name} as major activity in day ${targetDayIndex + 1}`)
+    }
+  })
+  
+  return itinerary
+}
+
+// Function to reorder events to prioritize selected places
+function prioritizeSelectedPlaces(itinerary: any, selectedPlaces: PlaceDetails[]): any {
+  const selectedPlaceNames = selectedPlaces.map(place => place.name.toLowerCase())
+  
+  itinerary.days.forEach((day: any) => {
+    if (day.events && day.events.length > 0) {
+      // Separate selected places from other events
+      const selectedPlaceEvents = day.events.filter((event: any) => 
+        selectedPlaceNames.some(selectedName => 
+          event.name.toLowerCase().includes(selectedName) || selectedName.includes(event.name.toLowerCase())
+        )
+      )
+      
+      const otherEvents = day.events.filter((event: any) => 
+        !selectedPlaceNames.some(selectedName => 
+          event.name.toLowerCase().includes(selectedName) || selectedName.includes(event.name.toLowerCase())
+        )
+      )
+      
+      // Reorder: selected places first, then other events
+      day.events = [...selectedPlaceEvents, ...otherEvents]
+      
+      console.log(`🔄 Reordered day ${day.day_number}: ${selectedPlaceEvents.length} selected places prioritized`)
+    }
+  })
+  
+  return itinerary
+}
+
 // Function to process the itinerary and calculate travel times/distances
 async function processItinerary(itinerary: any): Promise<ComprehensiveItinerary> {
   const processedDays: DayItinerary[] = []
@@ -470,16 +674,42 @@ async function processItinerary(itinerary: any): Promise<ComprehensiveItinerary>
       const event = day.events[i]
       const nextEvent = day.events[i + 1]
       
+      // Ensure coordinates are present
+      let coordinates = event.coordinates
+      if (!coordinates || !coordinates.lat || !coordinates.lng) {
+        console.log(`⚠️ Missing coordinates for event: ${event.name}, geocoding address: ${event.address}`)
+        const geocodedCoords = await getCoordinates(event.address)
+        if (geocodedCoords) {
+          coordinates = geocodedCoords
+          console.log(`✅ Geocoded coordinates for ${event.name}: ${coordinates.lat}, ${coordinates.lng}`)
+        } else {
+          console.error(`❌ Failed to geocode coordinates for: ${event.name}`)
+          // Use a default coordinate (center of the destination) as fallback
+          coordinates = { lat: 0, lng: 0 }
+        }
+      }
+      
       let travelTimeToNext = undefined
       let travelDistanceToNext = undefined
       
       if (nextEvent) {
+        // Ensure next event also has coordinates
+        let nextCoordinates = nextEvent.coordinates
+        if (!nextCoordinates || !nextCoordinates.lat || !nextCoordinates.lng) {
+          const geocodedNextCoords = await getCoordinates(nextEvent.address)
+          if (geocodedNextCoords) {
+            nextCoordinates = geocodedNextCoords
+          } else {
+            nextCoordinates = { lat: 0, lng: 0 }
+          }
+        }
+        
         // Calculate distance and travel time to next event
         const distance = calculateDistance(
-          event.coordinates.lat,
-          event.coordinates.lng,
-          nextEvent.coordinates.lat,
-          nextEvent.coordinates.lng
+          coordinates.lat,
+          coordinates.lng,
+          nextCoordinates.lat,
+          nextCoordinates.lng
         )
         travelDistanceToNext = Math.round(distance * 100) / 100 // Round to 2 decimal places
         travelTimeToNext = calculateTravelTime(distance)
@@ -489,7 +719,7 @@ async function processItinerary(itinerary: any): Promise<ComprehensiveItinerary>
         id: event.id || `event-${day.day_number}-${i}`,
         name: event.name,
         address: event.address,
-        coordinates: event.coordinates,
+        coordinates: coordinates,
         startTime: event.start_time,
         endTime: event.end_time,
         duration: event.duration,

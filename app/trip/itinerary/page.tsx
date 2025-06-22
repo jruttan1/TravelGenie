@@ -30,61 +30,29 @@ export default function ItineraryPage() {
   }
 
   useEffect(() => {
-    const loadItinerary = () => {
+    // Get itinerary from localStorage
+    const storedItinerary = localStorage.getItem('comprehensiveItinerary')
+    
+    if (storedItinerary) {
       try {
-        // Get stored comprehensive itinerary
-        const storedItinerary = localStorage.getItem('comprehensiveItinerary')
-        
-        if (!storedItinerary) {
-          console.log('No comprehensive itinerary found, redirecting to results')
-          setDataError('No itinerary data found. Please generate a new trip from the results page.')
-          setLoading(false)
-          return
-        }
-
-        // Parse itinerary
-        let parsedItinerary: ComprehensiveItinerary
-        try {
-          parsedItinerary = JSON.parse(storedItinerary)
-          console.log('✅ Loaded comprehensive itinerary:', parsedItinerary.tripTitle)
-        } catch (error) {
-          console.error('Error parsing stored itinerary:', error)
-          setDataError('Invalid itinerary data. Please generate a new trip.')
-          setLoading(false)
-          return
-        }
-
-        // Basic validation - just check that we have days
-        if (!parsedItinerary.days || !Array.isArray(parsedItinerary.days) || parsedItinerary.days.length === 0) {
-          console.error('Invalid itinerary structure - no days found')
-          setDataError('Invalid itinerary structure. Please generate a new trip.')
-          setLoading(false)
-          return
-        }
-
-        console.log(`📅 Itinerary loaded: ${parsedItinerary.days.length} days for ${parsedItinerary.destination}`)
-        
+        const parsedItinerary = JSON.parse(storedItinerary)
+        console.log('📋 Loaded itinerary from localStorage:', parsedItinerary)
+        console.log('📅 Days array:', parsedItinerary.days)
+        console.log('📊 Days length:', parsedItinerary.days?.length)
         setItinerary(parsedItinerary)
         setDataError(null)
         
       } catch (error) {
-        console.error('Error loading itinerary:', error)
-        setDataError('Error loading itinerary data. Please try again.')
-      } finally {
-        setLoading(false)
+        console.error('Error parsing stored itinerary:', error)
+        router.push('/trip/results')
       }
+    } else {
+      // No itinerary found, redirect back
+      console.log('❌ No itinerary found in localStorage')
+      router.push('/trip/results')
     }
-
-    loadItinerary()
-  }, [])
-
-  const clearAllTripData = () => {
-    localStorage.removeItem('tripRecommendations')
-    localStorage.removeItem('tripFormData')
-    localStorage.removeItem('placeDetails')
-    localStorage.removeItem('comprehensiveItinerary')
-    localStorage.removeItem('tripId')
-  }
+    setLoading(false)
+  }, [router])
 
   const handleBackToResults = () => {
     router.push('/trip/results')
@@ -253,6 +221,25 @@ export default function ItineraryPage() {
         </div>
       </div>
     )
+  }
+
+  // Validate itinerary structure
+  if (!itinerary.days || !Array.isArray(itinerary.days) || itinerary.days.length === 0) {
+    console.error('Invalid itinerary structure:', itinerary)
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Invalid itinerary data structure</p>
+          <p className="text-gray-500 text-sm mb-4">The itinerary could not be loaded properly.</p>
+          <Button onClick={handleBackToResults}>Back to Results</Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Ensure currentDay is within bounds
+  if (currentDay >= itinerary.days.length) {
+    setCurrentDay(0)
   }
 
   const currentDayData = itinerary.days[currentDay]

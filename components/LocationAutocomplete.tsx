@@ -61,7 +61,22 @@ export default function LocationAutocomplete({
       return
     }
 
-    // Load script
+    // Check if script is already being loaded
+    if (document.querySelector(`script[src*="maps.googleapis.com"]`)) {
+      // Script is already being loaded, wait for it
+      const checkScriptLoaded = () => {
+        if (window.google?.maps?.places) {
+          setIsScriptLoaded(true)
+          autocompleteService.current = new window.google.maps.places.AutocompleteService()
+        } else {
+          setTimeout(checkScriptLoaded, 100)
+        }
+      }
+      checkScriptLoaded()
+      return
+    }
+
+    // Load script only if not already loaded
     const script = document.createElement('script')
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
     script.async = true
@@ -76,12 +91,6 @@ export default function LocationAutocomplete({
     }
     
     document.head.appendChild(script)
-    
-    return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script)
-      }
-    }
   }, [])
 
   // Get place predictions
