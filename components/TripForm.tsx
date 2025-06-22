@@ -140,7 +140,6 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
                   transition: 'box-shadow 0.3s ease'
                 }}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
                 {formData.dateRange?.from ? (
                   formData.dateRange.to ? (
                     <>
@@ -262,38 +261,6 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
           ))}
         </div>
       </div>
-
-      {/* Travel Distance */}
-      <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.5s" }}>
-        <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-teal-600">
-          <Navigation className="h-5 w-5 text-teal-600" />
-          <span>How far are you willing to travel from your destination?</span>
-        </Label>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-visible">
-          {radiusOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleInputChange("radius", option.value)}
-              className={cn(
-                "p-6 rounded-2xl border-2 transition-all duration-200 text-left hover:scale-105 overflow-visible",
-                formData.radius === option.value
-                  ? "shadow-lg"
-                  : "glass-morphism"
-              )}
-              style={{
-                borderColor: formData.radius === option.value ? '#0d9488' : 'rgba(255, 255, 255, 0.3)',
-                backgroundColor: formData.radius === option.value ? 'rgba(13, 148, 136, 0.1)' : undefined
-              }}
-            >
-              <div className="text-2xl mb-2">{option.icon}</div>
-              <h3 className="font-semibold mb-1 text-gray-700">{option.label}</h3>
-              <p className="text-sm leading-relaxed text-gray-600">{option.description}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Must See */}
       <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.6s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-cyan-600">

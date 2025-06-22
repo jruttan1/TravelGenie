@@ -123,24 +123,6 @@ export async function POST(request: NextRequest) {
 
     const preferencesDisplay = preferences.map((p: string) => preferenceLabels[p as keyof typeof preferenceLabels] || p).join(", ");
 
-    // Map radius values to display format
-    const radiusMapping: Record<string, string> = {
-      walkable: "2-3 km",
-      local: "10-15 km",
-      regional: "50 km",
-      extended: "100 km"
-    };
-    const radiusDisplay = radiusMapping[radius] || radius || "30 km";
-
-    // Get the numeric radius value for distance calculations
-    const radiusValueMapping: Record<string, number> = {
-      walkable: 3,
-      local: 15,
-      regional: 50,
-      extended: 100
-    };
-    const radiusValue = radiusValueMapping[radius] || 30; // Default to 30km if not specified
-
     // Map wakeup time values to display format
     const wakeupTimeMapping: Record<string, string> = {
       early: "6:00 - 7:00 AM",
@@ -170,8 +152,6 @@ Preferences: ${preferencesDisplay}
 
 Must-see locations: ${mustSee || "None specified"}
 
-Max travel distance from city center: ${radiusDisplay}
-
 Preferred wake-up time: ${wakeupTimeDisplay}
 
 Travel dates: ${dateRangeDisplay}
@@ -180,8 +160,6 @@ Task:
 Generate a list of AT LEAST 9 engaging and diverse travel destination recommendations in or near the specified city. Base your suggestions on the user's budget, preferences, must-see locations, wake-up time, and travel dates.
 
 CRITICAL CONSTRAINTS:
-
-Every recommendation must be a real, specific place located within a strict ${radiusDisplay} radius of the center of ${destination}.
 
 Do not include general neighborhoods, regions, or vague location names.
 
@@ -271,8 +249,7 @@ Do not include any text before or after the JSON array. Do not use markdown or c
           
           console.log(`${rec.place_name}: ${distance.toFixed(2)}km from ${destination}`);
           
-          // Check if within radius AND verify it's actually in the destination
-          if (distance <= radiusValue) {
+          if (distance <= 100) {
             // Additional verification: check if the place name contains the destination or is clearly in the destination
             const placeNameLower = rec.place_name.toLowerCase();
             const destinationLower = destination.toLowerCase();
@@ -305,7 +282,7 @@ Do not include any text before or after the JSON array. Do not use markdown or c
       }
       
       if (verifiedRecommendations.length === 0) {
-        throw new Error(`No recommendations within ${radiusValue}km found`);
+        throw new Error(`No recommendations within 100km of ${destination} found`);
       }
       
       return NextResponse.json({

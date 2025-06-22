@@ -210,13 +210,12 @@ export default function LocationAutocomplete({
     return (
       <div className={`relative ${className}`}>
         <div className="relative">
-          <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Loading Google Maps..."
+            placeholder="Loading location data..."
             disabled
             value={inputValue ?? ''}
-            className="w-full glass-morphism border border-white/20 rounded-xl pl-12 pr-12 py-4 text-lg bg-gray-50/50 cursor-not-allowed text-gray-500"
+            className="w-full border border-white/20 rounded-full pl-4 pr-4 py-4 text-lg bg-gray-50/50 cursor-not-allowed text-gray-500 placeholder-left"
           />
         </div>
       </div>
@@ -225,7 +224,7 @@ export default function LocationAutocomplete({
 
   return (
     <div className={`relative ${className}`}>
-      <div className="relative">
+      <div className="relative rounding-full">
         <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
         
         <input
@@ -235,7 +234,7 @@ export default function LocationAutocomplete({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full glass-morphism border border-white/20 rounded-xl pl-12 pr-12 py-4 text-lg focus:outline-none focus:border-transparent text-gray-800 placeholder-gray-500 transition-all duration-200"
+          className="w-full glass-morphism border border-white/20 rounded-xl pl-4 pr-4 py-4 text-lg focus:outline-none focus:border-transparent text-gray-800 placeholder-gray-500 placeholder-left transition-all duration-200"
           style={{ 
             boxShadow: `0 0 0 2px rgba(59, 130, 246, 0.3)`,
             transition: 'box-shadow 0.3s ease'

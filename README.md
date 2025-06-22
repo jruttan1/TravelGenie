@@ -85,7 +85,6 @@ A comprehensive Next.js application that creates personalized travel itineraries
 3. **Budget**: Choose from Budget-Friendly, Moderate, or Luxury options
 4. **Interests**: Select from 8 categories (Art, Food, Adventure, History, etc.)
 5. **Wake-up Time**: Set your preferred daily start time
-6. **Travel Radius**: Choose how far you're willing to travel from your destination
 7. **Must-See**: Add specific attractions or experiences you don't want to miss
 
 ### 🤖 **AI Itinerary Generation**

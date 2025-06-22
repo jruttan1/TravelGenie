@@ -190,6 +190,19 @@ body {
   left: 100%;
 }
 
+/* Left-aligned placeholder text */
+.placeholder-left {
+  text-align: left; /* Keep input text left-aligned */
+}
+
+.placeholder-left::placeholder {
+  text-align: left !important;
+}
+
+.placeholder-left:focus::placeholder {
+  text-align: left !important;
+}
+
 /* Floating animation */
 .float-animation {
   animation: floatGentle 6s ease-in-out infinite;
