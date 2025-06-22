@@ -95,40 +95,6 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     
     if (onSubmit && isFormValid) {
       onSubmit(formData)
-    } else {
-      // Call the Gemini API to get trip recommendations
-      try {
-        const response = await fetch('/api/trip-plan', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          
-          // Store recommendations and form data in localStorage
-          localStorage.setItem('tripRecommendations', JSON.stringify(data.recommendations))
-          localStorage.setItem('tripFormData', JSON.stringify(formData))
-          
-          // Generate a unique trip ID
-          const tripId = `${formData.destination.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
-          localStorage.setItem('tripId', tripId)
-          
-          // Navigate to the results page
-          router.push('/trip/results')
-        } else {
-          console.error('Failed to get recommendations')
-          // Fallback to the default navigation
-          router.push("/trip/paris-3days-art-food")
-        }
-      } catch (error) {
-        console.error('Error calling trip-plan API:', error)
-        // Fallback to the default navigation
-        router.push("/trip/paris-3days-art-food")
-      }
     }
   }
 
@@ -364,7 +330,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
             </>
           ) : (
             <>
-              <span>Create My Itinerary</span>
+              <span>Generate recommendations</span>
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </>
           )}

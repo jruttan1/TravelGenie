@@ -7,6 +7,45 @@ import TripForm from "@/components/TripForm"
 export default function PlanTrip() {
   const [isLoading, setIsLoading] = useState(false)
 
+  const handleFormSubmit = async (formData: any) => {
+    setIsLoading(true)
+    
+    try {
+      const response = await fetch('/api/trip-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Store recommendations and form data in localStorage
+        localStorage.setItem('tripRecommendations', JSON.stringify(data.recommendations))
+        localStorage.setItem('tripFormData', JSON.stringify(formData))
+        
+        // Generate a unique trip ID
+        const tripId = `${formData.destination.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+        localStorage.setItem('tripId', tripId)
+        
+        // Navigate to the results page
+        window.location.href = '/trip/results'
+      } else {
+        console.error('Failed to get recommendations')
+        // Fallback to the default navigation
+        window.location.href = "/trip/paris-3days-art-food"
+      }
+    } catch (error) {
+      console.error('Error calling trip-plan API:', error)
+      // Fallback to the default navigation
+      window.location.href = "/trip/paris-3days-art-food"
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen dotted-background relative overflow-visible">
       {/* Bokeh Background Effects */}
@@ -35,7 +74,7 @@ export default function PlanTrip() {
           </div>
 
           {/* Trip Form */}
-          <TripForm isLoading={isLoading} />
+          <TripForm onSubmit={handleFormSubmit} isLoading={isLoading} />
         </div>
       </div>
     </div>

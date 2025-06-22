@@ -1,7 +1,19 @@
+"use client"
+
 import Link from "next/link"
-import { ArrowRight, MapPin, Sparkles, Plane, Star, ChevronDown } from "lucide-react"
+import { ArrowRight, MapPin, Sparkles, Plane, Star, ChevronDown, Loader2 } from "lucide-react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+
+  const handleStartPlanning = () => {
+    setIsLoading(true)
+    router.push('/plan')
+  }
+
   return (
     <div className="min-h-screen dotted-background relative overflow-visible">
       {/* Bokeh Background Effects */}
@@ -42,12 +54,23 @@ export default function Home() {
 
           {/* CTA Button */}
           <div className="pt-8 animate-slide-up overflow-visible">
-            <Link href="/plan">
-              <button className="modern-button group inline-flex items-center gap-3">
-                Start Planning
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </button>
-            </Link>
+            <button 
+              onClick={handleStartPlanning}
+              disabled={isLoading}
+              className="modern-button group inline-flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <>
+                  Start Planning
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
