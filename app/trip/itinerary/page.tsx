@@ -8,6 +8,18 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, MapPin, Clock, DollarSign, Calendar, Users, ChevronLeft, ChevronRight, Navigation } from "lucide-react"
 import Map3D from "@/components/Map3D"
 import type { ComprehensiveItinerary, ItineraryEvent } from "@/lib/types"
+import { 
+  getDayItinerary, 
+  getAllDayItineraries, 
+  getDayEvents, 
+  getDayMeals, 
+  getDayAllEvents, 
+  getDaySchedule, 
+  getDayOverview, 
+  extractDayVariables, 
+  getItinerarySummary,
+  getTripEventsForICal 
+} from "@/lib/itinerary-utils"
 
 export default function ItineraryPage() {
   const [itinerary, setItinerary] = useState<ComprehensiveItinerary | null>(null)
@@ -65,36 +77,44 @@ export default function ItineraryPage() {
 
   // Convert itinerary events to map points
   const getMapPoints = () => {
-    if (!itinerary) return []
+    if (!itinerary) {
+      console.log('No itinerary found for map points')
+      return []
+    }
     
     const points: any[] = []
     
     itinerary.days.forEach((day, dayIndex) => {
       // Add meals
       Object.values(day.meals).forEach(meal => {
-        points.push({
-          lng: meal.coordinates.lng,
-          lat: meal.coordinates.lat,
-          name: meal.name,
-          category: meal.category,
-          time: meal.startTime,
-          day: dayIndex + 1
-        })
+        if (meal?.coordinates?.lng && meal?.coordinates?.lat) {
+          points.push({
+            lng: meal.coordinates.lng,
+            lat: meal.coordinates.lat,
+            name: meal.name,
+            category: meal.category,
+            time: meal.startTime,
+            day: dayIndex + 1
+          })
+        }
       })
       
       // Add activities
       day.events.forEach(event => {
-        points.push({
-          lng: event.coordinates.lng,
-          lat: event.coordinates.lat,
-          name: event.name,
-          category: event.category,
-          time: event.startTime,
-          day: dayIndex + 1
-        })
+        if (event?.coordinates?.lng && event?.coordinates?.lat) {
+          points.push({
+            lng: event.coordinates.lng,
+            lat: event.coordinates.lat,
+            name: event.name,
+            category: event.category,
+            time: event.startTime,
+            day: dayIndex + 1
+          })
+        }
       })
     })
     
+    console.log('Map points generated:', points.length, points)
     return points
   }
 
@@ -154,6 +174,12 @@ export default function ItineraryPage() {
     currentDayData.meals.dinner,
     ...currentDayData.events.filter(e => e.startTime >= currentDayData.meals.dinner.startTime)
   ].sort((a, b) => a.startTime.localeCompare(b.startTime))
+
+  // Get all trip events for iCal conversion - THIS IS WHAT YOU NEED!
+  const tripEventsForICal = getTripEventsForICal(itinerary)
+  
+  // Log the iCal data to console so you can see the format
+  console.log('Trip Events for iCal:', tripEventsForICal)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">

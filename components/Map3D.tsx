@@ -27,11 +27,13 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
   const routeAnimationRef = useRef<number | null>(null);
 
   const [is3DView, setIs3DView] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [currentDay, setCurrentDay] = useState<number | 'all'>('all');
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [mapLoading, setMapLoading] = useState(true);
 
-  const darkStyle = 'mapbox://styles/mapbox/dark-v10';
-  const lightStyle = 'mapbox://styles/mapbox/streets-v11';
+  const mapStyle = 'mapbox://styles/mapbox/streets-v11';
+
+  console.log('Map3D received points:', points.length, points);
 
   useEffect(() => {
     if (map.current) return;
@@ -39,12 +41,16 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
     // Check if API key is available
     if (!mapboxgl.accessToken) {
       console.error('Mapbox API key not found. Please set NEXT_PUBLIC_MAPBOX_API_KEY in your .env.local file');
+      setMapError('Mapbox API key not configured. Please check your environment variables.');
+      setMapLoading(false);
       return;
     }
 
+    console.log('Initializing map with API key:', mapboxgl.accessToken ? 'Found' : 'Missing');
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current!,
-      style: darkStyle,
+      style: mapStyle,
       center: points.length > 0 ? [points[0].lng, points[0].lat] : [-74.0445, 40.6892],
       zoom: 12,
       pitch: 0,
@@ -54,12 +60,19 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
 
     map.current.on('load', () => {
       console.log('Map loaded, adding markers...');
+      setMapLoading(false);
       addCustomHtmlMarkers();
       add3DBuildings();
       addSkyLayer();
       if (showRoute) {
         addRoute();
       }
+    });
+
+    map.current.on('error', (e) => {
+      console.error('Map error:', e);
+      setMapError('Failed to load map. Please check your internet connection and API key.');
+      setMapLoading(false);
     });
 
     return () => {
@@ -92,23 +105,7 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
     });
   }, [is3DView]);
 
-  // Handle dark/light style switching correctly
-  useEffect(() => {
-    if (!map.current) return;
 
-    const newStyle = isDarkMode ? darkStyle : lightStyle;
-    map.current.setStyle(newStyle);
-
-    // Wait until map is fully idle (safest)
-    map.current.once('idle', () => {
-      addCustomHtmlMarkers();
-      add3DBuildings();
-      addSkyLayer();
-      if (showRoute) {
-        addRoute();
-      }
-    });
-  }, [isDarkMode]);
 
   // Filter points based on selected day
   const getFilteredPoints = () => {
@@ -397,6 +394,30 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
   // Get unique days from points
   const availableDays = [...new Set(points.map(p => p.day).filter((day): day is number => day !== undefined))].sort();
 
+  // Show error state
+  if (mapError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+        <div className="text-center p-6">
+          <div className="text-red-500 mb-2">⚠️</div>
+          <p className="text-gray-600 text-sm">{mapError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (mapLoading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-gray-600 text-sm">Loading map...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <style>{`
@@ -416,12 +437,6 @@ export default function Map3D({ points, showRoute = false, animateRoute = false 
             className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
           >
             {is3DView ? '2D View' : '3D View'}
-          </button>
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition text-sm"
-          >
-            {isDarkMode ? 'Light' : 'Dark'}
           </button>
         </div>
         
