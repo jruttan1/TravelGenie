@@ -134,7 +134,7 @@ export default function TripResultsPage() {
     loadTripData()
   }, [router])
 
-  // Filter recommendations to only show those with available details
+  // Filter recommendations to only show those with available details and remove duplicates
   useEffect(() => {
     const availableRecommendations = recommendations.filter(rec => {
       const details = placeDetails[rec.place_name]
@@ -144,7 +144,35 @@ export default function TripResultsPage() {
       return isLoading || (details && details.formatted_address)
     })
     
-    setFilteredRecommendations(availableRecommendations)
+    // Remove duplicates based on address and name
+    const uniqueRecommendations = availableRecommendations.filter((rec, index, array) => {
+      const details = placeDetails[rec.place_name]
+      if (!details || !details.formatted_address) {
+        // If no details yet, keep it (it's still loading)
+        return true
+      }
+      
+      // Check if this address or name has already appeared earlier in the array
+      const isDuplicate = array.slice(0, index).some(earlierRec => {
+        const earlierDetails = placeDetails[earlierRec.place_name]
+        if (!earlierDetails || !earlierDetails.formatted_address) {
+          return false
+        }
+        
+        // Check for duplicate address (case-insensitive)
+        const addressMatch = earlierDetails.formatted_address.toLowerCase() === details.formatted_address.toLowerCase()
+        
+        // Check for duplicate name (case-insensitive, with some tolerance for minor differences)
+        const nameMatch = earlierRec.place_name.toLowerCase().replace(/[^\w\s]/g, '') === 
+                         rec.place_name.toLowerCase().replace(/[^\w\s]/g, '')
+        
+        return addressMatch || nameMatch
+      })
+      
+      return !isDuplicate
+    })
+    
+    setFilteredRecommendations(uniqueRecommendations)
   }, [recommendations, placeDetails, loadingDetails])
 
   const handleBackToForm = () => {
@@ -167,7 +195,7 @@ export default function TripResultsPage() {
   }
 
   const handleSelectAll = () => {
-    setSelectedPlaces(recommendations.map(rec => rec.place_name))
+    setSelectedPlaces(filteredRecommendations.map(rec => rec.place_name))
   }
 
   const handleDeselectAll = () => {
@@ -402,6 +430,11 @@ export default function TripResultsPage() {
               <h2 className="text-2xl font-bold text-gray-800">
                 Select Your Places
               </h2>
+              {recommendations.length > filteredRecommendations.length && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                  {recommendations.length - filteredRecommendations.length} duplicates removed
+                </Badge>
+              )}
             </div>
             <div className="flex gap-2">
               <Button

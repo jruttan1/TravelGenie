@@ -188,6 +188,8 @@ export async function POST(request: NextRequest) {
 
 PRIMARY FOCUS: This itinerary MUST be built AROUND the user's selected places. These are the user's specific choices and should be the main attractions of each day.
 
+DUPLICATE PREVENTION: This is a ${dayAmount}-day itinerary where each place, restaurant, and activity should appear only ONCE across all days. Do not repeat any location names, restaurant names, or activity names across different days.
+
 USER'S SELECTED PLACES (THESE ARE THE MAIN ATTRACTIONS):
 ${selectedPlacesText}
 
@@ -211,6 +213,8 @@ DAILY PLANNING APPROACH:
 - Continue this pattern for all days
 - Add breakfast, lunch, dinner near the selected places
 - Add 1-2 complementary activities per day that enhance the selected places experience
+- IMPORTANT: Keep track of all places mentioned so far and avoid repeating any location, restaurant, or activity name across different days
+- Each day should feature completely unique places and activities (except for the selected places which are distributed across days)
 
 MANDATORY RULES:
 - Include ALL ${selectedPlaces.length} selected places as major activities
@@ -218,7 +222,12 @@ MANDATORY RULES:
 - Use exact coordinates: lat: X, lng: Y from the selected places
 - All activities must be in ${formData.destination}
 - Every event must have valid coordinates
-- Do not suggest places from other cities${mustSeeText}
+- Do not suggest places from other cities
+- NO DUPLICATE EVENTS: Each place, restaurant, or activity should appear only ONCE across the entire ${dayAmount}-day itinerary
+- Track all events across all days to ensure no repetition of the same location or activity
+- If suggesting restaurants, ensure each restaurant name appears only once
+- If suggesting activities, ensure each activity name appears only once
+- The only exceptions are generic meal categories (breakfast, lunch, dinner) which can have different restaurants each day${mustSeeText}
 
 Return ONLY valid JSON:
 {
