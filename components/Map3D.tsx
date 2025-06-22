@@ -18,36 +18,54 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY as string;
 export default function Map3D({ points }: Map3DProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MapboxMap | null>(null);
-  const markers = useRef<Marker[]>([]);
+  const markersRef = useRef<Marker[]>([]);
 
-  const [is3DView, setIs3DView] = useState(true);
-  const [mapStyleVersion, setMapStyleVersion] = useState(0); // Forces marker refresh
+  const [is3DView, setIs3DView] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // Initialize map
+  const darkStyle = 'mapbox://styles/mapbox/dark-v10';
+  const lightStyle = 'mapbox://styles/mapbox/streets-v11';
+
   useEffect(() => {
     if (map.current) return;
 
+    // Check if API key is available
+    if (!mapboxgl.accessToken) {
+      console.error('Mapbox API key not found. Please set NEXT_PUBLIC_MAPBOX_API_KEY in your .env.local file');
+      return;
+    }
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current!,
-      style: 'mapbox://styles/mapbox/streets-v11', // Always light mode
-      center: [-74.006, 40.7128], // MAKE DYNAMIC
-      zoom: 15,
-      pitch: is3DView ? 60 : 0,
-      bearing: is3DView ? -17.6 : 0,
+      style: darkStyle,
+      center: points.length > 0 ? [points[0].lng, points[0].lat] : [-74.0445, 40.6892],
+      zoom: 12,
+      pitch: 0,
+      bearing: 0,
       antialias: true,
     });
 
     map.current.on('load', () => {
-      addTerrainAndLayers();
+      console.log('Map loaded, adding markers...');
+      addCustomHtmlMarkers();
+      add3DBuildings();
+      addSkyLayer();
     });
 
-    map.current.on('styledata', () => {
-      addTerrainAndLayers();
-      setMapStyleVersion(prev => prev + 1);
-    });
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      map.current?.remove();
+    };
   }, []);
 
-  // Animate view transitions
+  // Update markers when points change
+  useEffect(() => {
+    if (map.current && map.current.isStyleLoaded()) {
+      addCustomHtmlMarkers();
+    }
+  }, [points]);
+
+  // Animate pitch and bearing for 3D toggle
   useEffect(() => {
     if (!map.current) return;
 
@@ -58,90 +76,121 @@ export default function Map3D({ points }: Map3DProps) {
     });
   }, [is3DView]);
 
-  // Light mode only - no style changes needed
-
-  // Add markers whenever points or style version changes
+  // Handle dark/light style switching correctly
   useEffect(() => {
     if (!map.current) return;
 
-    // Clear old markers
-    markers.current.forEach(marker => marker.remove());
-    markers.current = [];
+    const newStyle = isDarkMode ? darkStyle : lightStyle;
+    map.current.setStyle(newStyle);
 
-    // Add new markers
-    points.forEach(point => {
-      const marker = new mapboxgl.Marker()
-        .setLngLat([point.lng, point.lat])
-        .setPopup(new mapboxgl.Popup().setHTML(`<h3>${point.name}</h3>`))
-        .addTo(map.current!);
-      markers.current.push(marker);
+    // Wait until map is fully idle (safest)
+    map.current.once('idle', () => {
+      addCustomHtmlMarkers();
+      add3DBuildings();
+      addSkyLayer();
     });
-  }, [points, mapStyleVersion]);
+  }, [isDarkMode]);
 
-  // Helper to add terrain and 3D layers
-  function addTerrainAndLayers() {
+  function addCustomHtmlMarkers() {
     if (!map.current) return;
 
-    if (!map.current.getSource('mapbox-dem')) {
-      map.current.addSource('mapbox-dem', {
-        type: 'raster-dem',
-        url: 'mapbox://mapbox.terrain-rgb',
-        tileSize: 512,
-        maxzoom: 14,
-      });
-    }
+    // Clean up old markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
 
-    map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+    console.log('Adding markers for points:', points);
 
-    if (!map.current.getLayer('sky')) {
-      map.current.addLayer({
-        id: 'sky',
-        type: 'sky',
+    points.forEach((point, index) => {
+      const el = document.createElement('div');
+      el.className = 'marker';
+      el.title = point.name;
+      el.style.backgroundColor = '#3B82F6';
+      el.style.border = '3px solid white';
+      el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([point.lng, point.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setText(point.name))
+        .addTo(map.current!);
+
+      markersRef.current.push(marker);
+      console.log(`Added marker ${index + 1}:`, point.name, [point.lng, point.lat]);
+    });
+  }
+
+  function add3DBuildings() {
+    if (!map.current) return;
+    if (map.current.getLayer('3d-buildings')) return;
+
+    const layers = map.current.getStyle().layers!;
+    const labelLayerId = layers.find(
+      (layer) => layer.type === 'symbol' && layer.layout && layer.layout['text-field']
+    )?.id;
+
+    map.current.addLayer(
+      {
+        id: '3d-buildings',
+        source: 'composite',
+        'source-layer': 'building',
+        filter: ['==', 'extrude', 'true'],
+        type: 'fill-extrusion',
+        minzoom: 15,
         paint: {
-          'sky-type': 'atmosphere',
-          'sky-atmosphere-sun': [0.0, 0.0],
-          'sky-atmosphere-sun-intensity': 15,
+          'fill-extrusion-color': '#aaa',
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': ['get', 'min_height'],
+          'fill-extrusion-opacity': 0.6,
         },
-      });
-    }
+      },
+      labelLayerId
+    );
+  }
 
-    if (!map.current.getLayer('3d-buildings')) {
-      const layers = map.current.getStyle().layers!;
-      const labelLayerId = layers.find(
-        layer => layer.type === 'symbol' && layer.layout && layer.layout['text-field']
-      )?.id;
+  function addSkyLayer() {
+    if (!map.current) return;
+    if (map.current.getLayer('sky')) return;
 
-      map.current.addLayer(
-        {
-          id: '3d-buildings',
-          source: 'composite',
-          'source-layer': 'building',
-          filter: ['==', 'extrude', 'true'],
-          type: 'fill-extrusion',
-          minzoom: 15,
-          paint: {
-            'fill-extrusion-color': '#aaa',
-            'fill-extrusion-height': ['get', 'height'],
-            'fill-extrusion-base': ['get', 'min_height'],
-            'fill-extrusion-opacity': 0.6,
-          },
-        },
-        labelLayerId
-      );
-    }
+    map.current.addLayer({
+      id: 'sky',
+      type: 'sky',
+      paint: {
+        'sky-type': 'atmosphere',
+        'sky-atmosphere-sun': [0.0, 0.0],
+        'sky-atmosphere-sun-intensity': 15,
+      },
+    });
   }
 
   return (
     <>
-      <div className="absolute top-4 left-4 z-20">
+      <style>{`
+        .marker {
+          background-color: #3B82F6;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          border: 3px solid white;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+      `}</style>
+
+      <div className="absolute top-4 left-4 z-20 flex space-x-2">
         <button
           onClick={() => setIs3DView(!is3DView)}
-          className="px-1 py-1 modern-button text-white rounded-xl transition"
+          className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
         >
           {is3DView ? '2D View' : '3D View'}
         </button>
+        <button
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition text-sm"
+        >
+          {isDarkMode ? 'Light' : 'Dark'}
+        </button>
       </div>
-      <div ref={mapContainer} className="w-full h-screen" />
+
+      <div ref={mapContainer} className="w-full h-full" />
     </>
   );
 }
