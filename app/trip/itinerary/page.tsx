@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, MapPin, DollarSign, ChevronLeft, ChevronRight, Navigation, AlertTriangle } from "lucide-react"
 import Map3D from "@/components/Map3D"
 import type { ComprehensiveItinerary, ItineraryEvent } from "@/lib/types"
-
 export default function ItineraryPage() {
   const [itinerary, setItinerary] = useState<ComprehensiveItinerary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -61,6 +60,11 @@ export default function ItineraryPage() {
   const handleCreateNewTrip = () => {
     clearAllTripData()
     router.push('/plan')
+  }
+
+  const clearAllTripData = () => {
+    localStorage.removeItem('comprehensiveItinerary')
+    localStorage.removeItem('tripKey')
   }
 
   const handleRetryLoad = () => {
