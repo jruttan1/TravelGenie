@@ -13,7 +13,6 @@ export default function ItineraryPage() {
   const [itinerary, setItinerary] = useState<ComprehensiveItinerary | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentDay, setCurrentDay] = useState(0)
-  const [showMap, setShowMap] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
@@ -177,8 +176,9 @@ export default function ItineraryPage() {
           </Button>
         </div>
 
-        {showMap ? (
-          /* Map View */
+        {/* Split Layout: Map and Itinerary Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Map Section */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="h-[600px] relative">
               <Map3D 
@@ -188,112 +188,117 @@ export default function ItineraryPage() {
               />
             </div>
           </div>
-        ) : (
-          /* Itinerary View */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Itinerary Section */}
+          <div className="space-y-4">
+            {/* Day Navigation Header */}
+            <Card className="glass-morphism border-white/20">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Day {currentDayData.dayNumber}</CardTitle>
+                    <p className="text-sm text-gray-600">{currentDayData.date} • {currentDayData.theme}</p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={prevDay}
+                      disabled={currentDay === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={nextDay}
+                      disabled={currentDay === itinerary.days.length - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
 
             {/* Day Details */}
-            <div className="lg:col-span-2">
-              <Card className="glass-morphism border-white/20">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-xl">Day {currentDayData.dayNumber}</CardTitle>
-                      <p className="text-gray-600">{currentDayData.date} • {currentDayData.theme}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={prevDay}
-                        disabled={currentDay === 0}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={nextDay}
-                        disabled={currentDay === itinerary.days.length - 1}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {allEvents.map((event, index) => (
-                      <div key={event.id} className="border border-gray-200 rounded-lg p-4 bg-white">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <div className="text-sm font-mono text-gray-500 min-w-[80px]">
-                              {formatEventTime(event.startTime, event.endTime)}
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-800">{event.name}</h4>
-                              <p className="text-sm text-gray-600">{event.description}</p>
-                            </div>
+            <Card className="glass-morphism border-white/20">
+              <CardContent className="p-4 max-h-[500px] overflow-y-auto">
+                <div className="space-y-3">
+                  {allEvents.map((event, index) => (
+                    <div key={event.id} className="border border-gray-200 rounded-lg p-3 bg-white">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-start gap-3">
+                          <div className="text-xs font-mono text-gray-500 min-w-[60px] mt-1">
+                            {formatEventTime(event.startTime, event.endTime)}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className={getCategoryColor(event.category)}>
-                              {event.category}
-                            </Badge>
-                            <span className="text-sm text-gray-500">{event.estimatedCost}</span>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-800 text-sm">{event.name}</h4>
+                            <p className="text-xs text-gray-600 mt-1">{event.description}</p>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                          <MapPin className="h-4 w-4" />
-                          <span>{event.address}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className={`${getCategoryColor(event.category)} text-xs`}>
+                            {event.category}
+                          </Badge>
+                          <span className="text-xs text-gray-500">{event.estimatedCost}</span>
                         </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                        <MapPin className="h-3 w-3" />
+                        <span className="truncate">{event.address}</span>
+                      </div>
 
-                        {event.tips && event.tips.length > 0 && (
-                          <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                            <strong>Tip:</strong> {event.tips[0]}
-                          </div>
-                        )}
+                      {event.tips && event.tips.length > 0 && (
+                        <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
+                          <strong>Tip:</strong> {event.tips[0]}
+                        </div>
+                      )}
 
-                        {event.travelTimeToNext && (
-                          <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-                            <Navigation className="h-4 w-4" />
-                            <span>
-                              {event.travelTimeToNext} min walk to next location 
-                              ({event.travelDistanceToNext?.toFixed(1)} km)
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-                {/* Budget Breakdown */}
-               <div className="mt-1 p-4 bg-gray-50 rounded-lg px-8 py-4">
-                    <h4 className="font-medium text-gray-800 mb-2">Daily Budget</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span>Activities:</span>
-                        <span>{currentDayData.dailyBudgetBreakdown.activities}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Meals:</span>
-                        <span>{currentDayData.dailyBudgetBreakdown.meals}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Transport:</span>
-                        <span>{currentDayData.dailyBudgetBreakdown.transportation}</span>
-                      </div>
-                      <hr className="my-2" />
-                      <div className="flex justify-between font-medium">
-                        <span>Total:</span>
-                        <span>{currentDayData.dailyBudgetBreakdown.total}</span>
-                      </div>
+                      {event.travelTimeToNext && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+                          <Navigation className="h-3 w-3" />
+                          <span>
+                            {event.travelTimeToNext} min walk ({event.travelDistanceToNext?.toFixed(1)} km)
+                          </span>
+                        </div>
+                      )}
                     </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Daily Budget */}
+            <Card className="glass-morphism border-white/20">
+              <CardContent className="p-4">
+                <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2 text-sm">
+                  <DollarSign className="h-4 w-4" />
+                  Daily Budget
+                </h4>
+                <div className="grid grid-cols-4 gap-2 text-xs">
+                  <div className="text-center">
+                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown.activities}</div>
+                    <div className="text-gray-600">Activities</div>
                   </div>
-              </Card>
-            </div>
+                  <div className="text-center">
+                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown.meals}</div>
+                    <div className="text-gray-600">Meals</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium text-gray-800">{currentDayData.dailyBudgetBreakdown.transportation}</div>
+                    <div className="text-gray-600">Transport</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium text-blue-800">{currentDayData.dailyBudgetBreakdown.total}</div>
+                    <div className="text-blue-600 font-medium">Total</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

@@ -79,7 +79,7 @@ async function getCoordinates(location: string): Promise<{ lat: number; lng: num
 
 export async function POST(request: NextRequest) {
   try {
-    const { destination, budget, preferences, mustSee } = await request.json();
+    const { destination, budget, preferences, mustSee, dateRange, wakeupTime, radius } = await request.json();
 
     // Validate required fields
     if (!destination || !budget || !preferences || preferences.length === 0) {
@@ -123,39 +123,107 @@ export async function POST(request: NextRequest) {
 
     const preferencesDisplay = preferences.map((p: string) => preferenceLabels[p as keyof typeof preferenceLabels] || p).join(", ");
 
+    // Map radius values to display format
+    const radiusMapping: Record<string, string> = {
+      walkable: "2-3 km",
+      local: "10-15 km",
+      regional: "50 km",
+      extended: "100 km"
+    };
+    const radiusDisplay = radiusMapping[radius] || radius || "30 km";
+
+    // Get the numeric radius value for distance calculations
+    const radiusValueMapping: Record<string, number> = {
+      walkable: 3,
+      local: 15,
+      regional: 50,
+      extended: 100
+    };
+    const radiusValue = radiusValueMapping[radius] || 30; // Default to 30km if not specified
+
+    // Map wakeup time values to display format
+    const wakeupTimeMapping: Record<string, string> = {
+      early: "6:00 - 7:00 AM",
+      morning: "7:00 - 9:00 AM",
+      late: "9:00 - 11:00 AM"
+    };
+    const wakeupTimeDisplay = wakeupTimeMapping[wakeupTime] || wakeupTime || "8:00 AM";
+
+    // Format date range for display
+    let dateRangeDisplay = "Not specified";
+    if (dateRange && dateRange.from && dateRange.to) {
+      const fromDate = new Date(dateRange.from);
+      const toDate = new Date(dateRange.to);
+      dateRangeDisplay = `${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()}`;
+    }
+
     // Create the system prompt with the form data
     const systemPrompt = `You are a travel expert helping someone plan a trip. Based on the provided inputs, generate a list of locations to visit in the specified city.
 
 Input variables:
-* City: ${destination}
-* Budget: ${budgetDisplay}
-* Preferences: ${preferencesDisplay}
-* Must-see locations: ${mustSee || "None specified"}
+
+City: ${destination}
+
+Budget: ${budgetDisplay}
+
+Preferences: ${preferencesDisplay}
+
+Must-see locations: ${mustSee || "None specified"}
+
+Max travel distance from city center: ${radiusDisplay}
+
+Preferred wake-up time: ${wakeupTimeDisplay}
+
+Travel dates: ${dateRangeDisplay}
 
 Task:
-Create a list of 7 to 12 travel destination recommendations in the specified destination based on the budget, preferences, and must-see locations.
-**EXTREMELY IMPORTANT:ALL RECOMMENDATIONS HAVE TO BE IN A MAXIMUM DISTANCE OF 30 km AWAY FROM THE DESTINATION!**
+Generate a list of at least 9 engaging and diverse travel destination recommendations in or near the specified city. Base your suggestions on the user's budget, preferences, must-see locations, wake-up time, and travel dates.
 
-Each recommendation should:
-* Be a specific place in ${destination} with an address that is not just a region within the area. (You do not need to include the address in the place_name)
-* Include at least one of the must-see locations as a recommendation if it is a place in the city of ${destination} and is not already included in the preferences and actually exists
-* Match the traveler's preferences and budget
-* Include a description of no more than three concise sentences with a rough estimate on price in $CAD
+CRITICAL CONSTRAINTS:
 
-IMPORTANT: Return ONLY a valid JSON array with no additional text, markdown formatting, or explanations. Use this exact format:
+Every recommendation must be a real, specific place located within a strict ${radiusDisplay} radius of the center of ${destination}.
+
+Do not include general neighborhoods, regions, or vague location names.
+
+Do not include any places that are closed, unavailable, or irrelevant during the travel dates in ${dateRangeDisplay}.
+
+SPECIAL INSTRUCTION  RESTAURANTS:
+For each full day of travel within ${dateRangeDisplay}, recommend exactly 3 food establishments: one for breakfast, one for lunch, and one for dinner. These must be restaurants, cafés, or similar food venues appropriate to the time of day, traveler budget, and preferences. Adjust recommendations based on wake-up time (${wakeupTimeDisplay})—no breakfast options should be suggested before that time.
+
+The rest of the list should include other diverse recommendations, such as:
+
+Cultural and historical attractions
+
+Natural or scenic spots
+
+Local events and seasonal festivals (if occurring during ${dateRangeDisplay})
+
+Entertainment venues, nightlife, or unique local experiences
+
+Shopping districts, museums, or hidden gems
+
+Each entry must:
+
+Be a specific, named place that actually exists and fits the given constraints
+
+Include a short description of no more than three concise sentences
+
+Provide a rough price estimate in $CAD (e.g., "$25-$60 CAD")
+
+Return ONLY a valid JSON array with no additional text, markdown formatting, or explanation. Use this exact structure:
 
 [
-  {
-    "place_name": "Exact Place Name",
-    "description": "Description with price estimate in $CAD"
-  },
-  {
-    "place_name": "Another Place Name", 
-    "description": "Another description with price estimate in $CAD"
-  }
+{
+"place_name": "Exact Place Name",
+"description": "Description with price estimate in $CAD"
+},
+{
+"place_name": "Another Place Name",
+"description": "Another description with price estimate in $CAD"
+}
 ]
 
-Do not include any text before or after the JSON array. Do not use markdown code blocks. Ensure all property names are in double quotes and all strings are properly escaped.`;
+Do not include any text before or after the JSON array. Do not use markdown or code blocks. All property names must be in double quotes and all strings must be properly escaped.`;
 
     // create a model instance
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -201,7 +269,7 @@ Do not include any text before or after the JSON array. Do not use markdown code
           
           console.log(`${rec.place_name}: ${distance.toFixed(2)}km from ${destination}`);
           
-          if (distance <= 30) {
+          if (distance <= radiusValue) {
             verifiedRecommendations.push(rec);
           } else {
             console.log(`Filtered out ${rec.place_name} - too far (${distance.toFixed(2)}km)`);
@@ -213,7 +281,7 @@ Do not include any text before or after the JSON array. Do not use markdown code
       }
       
       if (verifiedRecommendations.length === 0) {
-        throw new Error('No recommendations within 30km found');
+        throw new Error(`No recommendations within ${radiusValue}km found`);
       }
       
       return NextResponse.json({

@@ -184,40 +184,20 @@ export async function POST(request: NextRequest) {
     })
 
     // Create the AI prompt
-    const prompt = `You are TravelGenie, an expert AI travel planner specializing in creating personalized, optimized itineraries.
-
-TRIP DETAILS:
-- Destination: ${formData.destination}
-- Duration: ${dayAmount} days (${startDate} to ${endDate})
-- Budget: ${budgetDescription}
-- Interests: ${preferencesText}
-- Preferred start time: ${wakeupTimeText}
-- Travel radius: ${formData.radius}${mustSeeText}
+    const prompt = `Create a ${dayAmount}-day itinerary for ${formData.destination} (${startDate} to ${endDate}).
 
 SELECTED PLACES TO INCLUDE:
 ${selectedPlacesText}
 
-TASK:
-Create a detailed ${dayAmount}-day itinerary that includes:
-1. All selected places distributed across the trip days
-2. Breakfast, lunch, and dinner for each day
-3. Start time based on preferred wakeup time (${wakeupTimeText})
-4. Logical geographic clustering to minimize travel time
-5. Appropriate timing for each activity
-6. Budget-conscious recommendations
-7. Exact addresses and coordinates for all locations
+REQUIREMENTS:
+- Budget: ${budgetDescription}
+- Interests: ${preferencesText}
+- Start time: ${wakeupTimeText}
+- Include ALL selected places across ${dayAmount} days
+- Add breakfast, lunch, dinner each day
+- Real coordinates for all locations${mustSeeText}
 
-IMPORTANT REQUIREMENTS:
-- Each event must have exact coordinates (lat, lng)
-- Include breakfast, lunch, dinner as separate events each day
-- Start first activity at ${wakeupTimeText}
-- All restaurants and activities must be real places in ${formData.destination}
-- Distribute selected places across all ${dayAmount} days
-- Include travel time estimates between locations
-
-OUTPUT FORMAT:
-Return ONLY valid JSON (no markdown, no backticks):
-
+Return ONLY valid JSON:
 {
   "trip_title": "string",
   "destination": "${formData.destination}",
@@ -230,32 +210,29 @@ Return ONLY valid JSON (no markdown, no backticks):
   "budget": "${formData.budget}",
   "days": [
     {
-      "day_number": number,
+      "day_number": 1,
       "date": "YYYY-MM-DD",
       "theme": "string",
       "events": [
         {
-          "id": "string",
+          "id": "event1",
           "name": "string",
           "address": "string",
-          "coordinates": {
-            "lat": number,
-            "lng": number
-          },
+          "coordinates": {"lat": 0, "lng": 0},
           "start_time": "HH:MM",
           "end_time": "HH:MM",
-          "duration": number,
-          "category": "breakfast|lunch|dinner|activity|sightseeing|entertainment|shopping",
+          "duration": 60,
+          "category": "breakfast|lunch|dinner|activity",
           "description": "string",
-          "estimated_cost": "string",
+          "estimated_cost": "$0",
           "tips": ["string"]
         }
       ],
       "daily_budget_breakdown": {
-        "activities": "string",
-        "meals": "string",
-        "transportation": "string",
-        "total": "string"
+        "activities": "$0",
+        "meals": "$0", 
+        "transportation": "$0",
+        "total": "$0"
       }
     }
   ],
@@ -263,27 +240,23 @@ Return ONLY valid JSON (no markdown, no backticks):
   "packing_suggestions": ["string"],
   "local_customs": ["string"],
   "emergency_info": {
-    "emergency_number": "string",
+    "emergency_number": "911",
     "embassy_contact": "string",
     "important_phrases": ["string"]
   }
-}
-
-REQUIREMENTS:
-- Include ALL selected places in the itinerary
-- Each day must have exactly 3 meal events (breakfast, lunch, dinner) plus activities
-- All coordinates must be real and accurate
-- Start time for day 1 should be ${wakeupTimeText}
-- Logical flow and timing throughout each day
-- Consider travel time between locations
-
-Generate the complete itinerary now:`
+}`
 
     console.log('🤖 Calling Gemini AI to generate itinerary...')
     console.log('📝 Prompt length:', prompt.length, 'characters')
 
     // Generate content with Gemini
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash',
+      generationConfig: {
+        maxOutputTokens: dayAmount > 7 ? 8192 : 4096, // Higher limit for longer trips
+        temperature: 0.7,
+      }
+    })
     
     const startTime = Date.now()
     const result = await model.generateContent(prompt)
@@ -293,17 +266,134 @@ Generate the complete itinerary now:`
     console.log(`⏱️ Gemini response received in ${endTime - startTime}ms`)
     console.log('📄 Response length:', responseText.length, 'characters')
     console.log('🔍 First 500 characters of response:', responseText.substring(0, 500))
+    console.log('🔍 Last 500 characters of response:', responseText.substring(responseText.length - 500))
 
     // Try to parse the JSON response
     let aiItinerary
     try {
       // Clean the response (remove any markdown formatting)
-      const cleanedResponse = responseText
+      let cleanedResponse = responseText
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim()
       
+      // Check if response is truncated (doesn't end with closing brace)
+      if (!cleanedResponse.endsWith('}')) {
+        console.log('⚠️ Response appears to be truncated, attempting to fix...')
+        
+        // Find complete day objects by looking for budget breakdown patterns
+        const budgetBreakdownPattern = /"daily_budget_breakdown":\s*{[^}]*}/g
+        const budgetMatches = [...cleanedResponse.matchAll(budgetBreakdownPattern)]
+        
+        if (budgetMatches.length > 0) {
+          console.log(`🔍 Found ${budgetMatches.length} complete budget breakdowns`)
+          
+          // Get the last complete budget breakdown
+          const lastBudgetMatch = budgetMatches[budgetMatches.length - 1]
+          const budgetEndPosition = lastBudgetMatch.index! + lastBudgetMatch[0].length
+          
+          // Find the end of the day object that contains this budget breakdown
+          let braceCount = 0
+          let dayObjectEnd = budgetEndPosition
+          
+          // Look for the closing brace of the day object after the budget breakdown
+          for (let i = budgetEndPosition; i < cleanedResponse.length; i++) {
+            if (cleanedResponse[i] === '}') {
+              dayObjectEnd = i + 1
+              break
+            } else if (cleanedResponse[i] === '{') {
+              // If we hit another opening brace, we've gone too far
+              break
+            }
+          }
+          
+          // Truncate to the end of the last complete day
+          const truncated = cleanedResponse.substring(0, dayObjectEnd)
+          
+          // Check if we need to close the days array and main object
+          if (truncated.includes('"days":')) {
+            // Count how many days we have
+            const dayCount = (truncated.match(/"day_number":/g) || []).length
+            console.log(`🔧 Reconstructing JSON with ${dayCount} complete days`)
+            
+            // Remove any trailing comma and close the array and object
+            let cleaned = truncated.replace(/,\s*$/, '')
+            
+            // Ensure we close the days array and main object properly
+            if (!cleaned.endsWith('}')) {
+              cleaned += '}'
+            }
+            
+            // Close the days array if it's not already closed
+            if (!cleaned.includes(']}')) {
+              cleaned = cleaned.replace(/}$/, '}]')
+            }
+            
+            // Close the main object
+            if (!cleaned.endsWith('}}')) {
+              cleaned += '}'
+            }
+            
+            cleanedResponse = cleaned
+            console.log('🔧 Successfully reconstructed JSON with complete days')
+          } else {
+            // Fallback to simple truncation
+            const lastBraceIndex = cleanedResponse.lastIndexOf('}')
+            if (lastBraceIndex > 0) {
+              cleanedResponse = cleanedResponse.substring(0, lastBraceIndex + 1)
+              console.log('🔧 Used fallback: no days array found')
+            }
+          }
+        } else {
+          console.log('🔍 No complete budget breakdowns found')
+          
+          // Try to find at least one complete event and close gracefully
+          const eventPattern = /"category":\s*"[^"]*"/g
+          const eventMatches = [...cleanedResponse.matchAll(eventPattern)]
+          
+          if (eventMatches.length > 0) {
+            const lastEventMatch = eventMatches[eventMatches.length - 1]
+            const eventEndPosition = lastEventMatch.index! + lastEventMatch[0].length
+            
+            // Find the end of this event object
+            let braceCount = 0
+            let eventObjectEnd = eventEndPosition
+            
+            for (let i = eventEndPosition; i < cleanedResponse.length; i++) {
+              if (cleanedResponse[i] === '}') {
+                eventObjectEnd = i + 1
+                break
+              }
+            }
+            
+            // Create a minimal valid JSON with at least one day
+            const beforeEvent = cleanedResponse.substring(0, eventObjectEnd)
+            const dayCount = (beforeEvent.match(/"day_number":/g) || []).length
+            
+            if (dayCount > 0) {
+              cleanedResponse = beforeEvent + '],"daily_budget_breakdown":{"activities":"$0","meals":"$0","transportation":"$0","total":"$0"}}]}'
+              console.log('🔧 Created minimal valid JSON with partial day')
+            } else {
+              // Ultimate fallback
+              const lastBraceIndex = cleanedResponse.lastIndexOf('}')
+              if (lastBraceIndex > 0) {
+                cleanedResponse = cleanedResponse.substring(0, lastBraceIndex + 1)
+                console.log('🔧 Ultimate fallback: simple truncation')
+              }
+            }
+          } else {
+            // Ultimate fallback
+            const lastBraceIndex = cleanedResponse.lastIndexOf('}')
+            if (lastBraceIndex > 0) {
+              cleanedResponse = cleanedResponse.substring(0, lastBraceIndex + 1)
+              console.log('🔧 Ultimate fallback: no events found')
+            }
+          }
+        }
+      }
+      
       console.log('🧹 Cleaned response length:', cleanedResponse.length, 'characters')
+      console.log('🔍 Response ends with:', cleanedResponse.substring(cleanedResponse.length - 100))
       
       aiItinerary = JSON.parse(cleanedResponse)
       console.log('✅ Successfully parsed AI response')
@@ -316,11 +406,16 @@ Generate the complete itinerary now:`
     } catch (parseError) {
       console.error('❌ Failed to parse JSON response:', parseError)
       console.error('🔍 Raw response (first 1000 chars):', responseText.substring(0, 1000))
-      console.error('🔍 Cleaned response (first 1000 chars):', responseText
+      console.error('🔍 Raw response (last 1000 chars):', responseText.substring(Math.max(0, responseText.length - 1000)))
+      
+      const cleanedForDebug = responseText
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim()
-        .substring(0, 1000))
+      
+      console.error('🔍 Cleaned response (first 1000 chars):', cleanedForDebug.substring(0, 1000))
+      console.error('🔍 Cleaned response (last 1000 chars):', cleanedForDebug.substring(Math.max(0, cleanedForDebug.length - 1000)))
+      
       return createErrorResponse("Failed to generate valid itinerary. The AI response could not be parsed. Please try again.", 500)
     }
 
