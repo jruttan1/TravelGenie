@@ -186,35 +186,39 @@ export async function POST(request: NextRequest) {
     // Create the AI prompt
     const prompt = `Create a ${dayAmount}-day itinerary for ${formData.destination} (${startDate} to ${endDate}).
 
-LOCATION REQUIREMENT: This itinerary MUST be for ${formData.destination} ONLY. Do not create an itinerary for any other city or location.
+PRIMARY FOCUS: This itinerary MUST be built AROUND the user's selected places. These are the user's specific choices and should be the main attractions of each day.
 
-CRITICAL: You MUST include ALL of these specific selected places in your itinerary. These are the user's chosen locations and should be the primary focus:
-
-SELECTED PLACES TO INCLUDE (REQUIRED):
+USER'S SELECTED PLACES (THESE ARE THE MAIN ATTRACTIONS):
 ${selectedPlacesText}
 
-ITINERARY REQUIREMENTS:
-- LOCATION: ${formData.destination} ONLY - do not suggest places from other cities
+CRITICAL REQUIREMENTS:
+1. BUILD THE ITINERARY AROUND THESE SELECTED PLACES - they are the core of the trip
+2. Each selected place should be a major activity/attraction for that day
+3. Use the EXACT names, addresses, and coordinates provided above
+4. Add meals and additional activities that complement these selected places
+5. Do NOT replace these selected places with generic suggestions
+
+ITINERARY STRUCTURE:
+- LOCATION: ${formData.destination} ONLY
 - Budget: ${budgetDescription}
 - Interests: ${preferencesText}
 - Start time: ${wakeupTimeText}
-- MANDATORY: Include ALL ${selectedPlaces.length} selected places above across ${dayAmount} days
-- MANDATORY: Use the exact names and addresses provided for the selected places
-- MANDATORY: Use the EXACT coordinates provided for the selected places (lat: X, lng: Y)
-- MANDATORY: All activities must be in ${formData.destination} or its immediate vicinity
-- MANDATORY: Every event must have valid coordinates (lat and lng values)
-- MANDATORY: You MUST include every single selected place listed above - do not skip any
-- Add appropriate breakfast, lunch, and dinner locations each day (in ${formData.destination})
-- Distribute selected places logically across days based on location proximity
-- Add additional activities/attractions that complement the selected places (in ${formData.destination})
-- Ensure realistic timing and travel between locations${mustSeeText}
+- Duration: ${dayAmount} days
 
-IMPORTANT: 
-- The selected places above are the user's specific choices and must be the core of the itinerary
-- Do not replace them with generic suggestions
-- ALL activities must be located in ${formData.destination}
-- Do not suggest places from other cities or countries
-- You MUST include ALL ${selectedPlaces.length} selected places - this is non-negotiable
+DAILY PLANNING APPROACH:
+- Day 1: Focus on selected places 1-${Math.ceil(selectedPlaces.length / dayAmount)}
+- Day 2: Focus on selected places ${Math.ceil(selectedPlaces.length / dayAmount) + 1}-${Math.ceil(selectedPlaces.length / dayAmount) * 2}
+- Continue this pattern for all days
+- Add breakfast, lunch, dinner near the selected places
+- Add 1-2 complementary activities per day that enhance the selected places experience
+
+MANDATORY RULES:
+- Include ALL ${selectedPlaces.length} selected places as major activities
+- Use exact names and addresses from the selected places list
+- Use exact coordinates: lat: X, lng: Y from the selected places
+- All activities must be in ${formData.destination}
+- Every event must have valid coordinates
+- Do not suggest places from other cities${mustSeeText}
 
 Return ONLY valid JSON:
 {
@@ -472,6 +476,11 @@ Return ONLY valid JSON:
         console.log('🔧 Injecting missing selected places into itinerary...')
         aiItinerary = injectMissingSelectedPlaces(aiItinerary, selectedPlaces, missingPlaces, dayAmount)
         console.log('✅ Missing places injected successfully')
+        
+        // Prioritize selected places in the itinerary order
+        console.log('🔄 Prioritizing selected places in itinerary...')
+        aiItinerary = prioritizeSelectedPlaces(aiItinerary, selectedPlaces)
+        console.log('✅ Selected places prioritized successfully')
       }
       
     } catch (parseError) {
@@ -575,34 +584,70 @@ function injectMissingSelectedPlaces(itinerary: any, selectedPlaces: PlaceDetail
   
   console.log(`🔧 Injecting ${missingPlaces.length} missing places into itinerary`)
   
-  // Distribute missing places across days
+  // Calculate how many places per day for better distribution
+  const placesPerDay = Math.ceil(selectedPlaces.length / dayAmount)
+  
+  // Distribute missing places across days more intelligently
   missingPlaces.forEach((place, index) => {
-    const targetDayIndex = index % dayAmount
+    const targetDayIndex = Math.min(index, dayAmount - 1) // Ensure we don't exceed day count
     const targetDay = itinerary.days[targetDayIndex]
     
     if (targetDay && targetDay.events) {
-      // Create an event for the missing place
+      // Create a prominent event for the missing place (make it a major activity)
       const newEvent = {
-        id: `injected-${place.place_id}`,
+        id: `selected-place-${place.place_id}`,
         name: place.name,
         address: place.formatted_address,
         coordinates: {
           lat: place.geometry.location.lat,
           lng: place.geometry.location.lng
         },
-        start_time: "14:00", // Default time
-        end_time: "16:00",   // Default time
+        start_time: "10:00", // Make it a morning/afternoon activity
+        end_time: "12:00",   // 2 hours duration
         duration: 120,       // 2 hours
         category: "activity",
-        description: `Visit ${place.name} - ${place.formatted_address}`,
-        estimated_cost: "$0",
-        tips: [`Make sure to visit ${place.name} during your trip to ${itinerary.destination}`]
+        description: `Visit ${place.name} - A must-see attraction in ${itinerary.destination}. ${place.formatted_address}`,
+        estimated_cost: place.price_level ? `$${place.price_level * 10}-${place.price_level * 25}` : "$0",
+        tips: [
+          `This is one of your selected must-visit places in ${itinerary.destination}`,
+          `Plan to spend 1-2 hours exploring ${place.name}`,
+          place.rating ? `Highly rated: ${place.rating}/5 stars` : "Popular local attraction"
+        ]
       }
       
-      // Insert the event into the day's events array
-      targetDay.events.push(newEvent)
+      // Insert the event at the beginning of the day's events to make it prominent
+      targetDay.events.unshift(newEvent)
       
-      console.log(`✅ Injected ${place.name} into day ${targetDayIndex + 1}`)
+      console.log(`✅ Injected ${place.name} as major activity in day ${targetDayIndex + 1}`)
+    }
+  })
+  
+  return itinerary
+}
+
+// Function to reorder events to prioritize selected places
+function prioritizeSelectedPlaces(itinerary: any, selectedPlaces: PlaceDetails[]): any {
+  const selectedPlaceNames = selectedPlaces.map(place => place.name.toLowerCase())
+  
+  itinerary.days.forEach((day: any) => {
+    if (day.events && day.events.length > 0) {
+      // Separate selected places from other events
+      const selectedPlaceEvents = day.events.filter((event: any) => 
+        selectedPlaceNames.some(selectedName => 
+          event.name.toLowerCase().includes(selectedName) || selectedName.includes(event.name.toLowerCase())
+        )
+      )
+      
+      const otherEvents = day.events.filter((event: any) => 
+        !selectedPlaceNames.some(selectedName => 
+          event.name.toLowerCase().includes(selectedName) || selectedName.includes(event.name.toLowerCase())
+        )
+      )
+      
+      // Reorder: selected places first, then other events
+      day.events = [...selectedPlaceEvents, ...otherEvents]
+      
+      console.log(`🔄 Reordered day ${day.day_number}: ${selectedPlaceEvents.length} selected places prioritized`)
     }
   })
   
