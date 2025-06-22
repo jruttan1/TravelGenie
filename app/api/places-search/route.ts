@@ -17,7 +17,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 async function getCoordinates(location: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${process.env.GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
     );
     const data = await response.json();
     
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.GOOGLE_MAPS_API_KEY) {
+    if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
       return NextResponse.json(
         { error: 'Google Maps API key not configured' },
         { status: 500 }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Search for the place with destination context
     const searchQuery = destination ? `${query}, ${destination}` : query;
-    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
     
     const searchResponse = await fetch(searchUrl);
     const searchData = await searchResponse.json();
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get detailed information including photos
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${selectedPlace.place_id}&fields=formatted_address,formatted_phone_number,website,rating,user_ratings_total,price_level,opening_hours,photos,types,geometry&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${selectedPlace.place_id}&fields=formatted_address,formatted_phone_number,website,rating,user_ratings_total,price_level,opening_hours,photos,types,geometry&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
     
     const detailsResponse = await fetch(detailsUrl);
     const detailsData = await detailsResponse.json();
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         ...selectedPlace,
         ...detailsData.result,
         photo_urls: detailsData.result.photos?.slice(0, 3).map((photo: any) => 
-          `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${process.env.GOOGLE_MAPS_API_KEY}`
+          `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
         ) || []
       };
 

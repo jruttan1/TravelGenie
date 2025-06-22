@@ -215,6 +215,7 @@ export default function LocationAutocomplete({
             type="text"
             placeholder="Loading Google Maps..."
             disabled
+            value={inputValue ?? ''}
             className="w-full glass-morphism border border-white/20 rounded-xl pl-12 pr-12 py-4 text-lg bg-gray-50/50 cursor-not-allowed text-gray-500"
           />
         </div>

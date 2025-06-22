@@ -62,7 +62,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 async function getCoordinates(location: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${process.env.GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
     );
     const data = await response.json();
     
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Gemini API key not configured', 500);
     }
 
-    if (!process.env.GOOGLE_MAPS_API_KEY) {
+    if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
       return createErrorResponse('Google Maps API key not configured', 500);
     }
 

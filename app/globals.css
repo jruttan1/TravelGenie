@@ -22,6 +22,10 @@ body {
   width: 100%;
 }
 
+nextjs-portal {
+  display: none;
+}
+
 /* Beautiful White Dotted Paper Background */
 .dotted-background {
   background-color: #fefefe;
