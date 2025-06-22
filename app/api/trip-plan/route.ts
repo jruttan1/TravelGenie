@@ -79,7 +79,7 @@ async function getCoordinates(location: string): Promise<{ lat: number; lng: num
 
 export async function POST(request: NextRequest) {
   try {
-    const { destination, budget, preferences, mustSee, dateRange, wakeupTime, radius } = await request.json();
+    const { destination, budget, preferences, mustSee, dateRange, wakeupTime } = await request.json();
 
     // Validate required fields
     if (!destination || !budget || !preferences || preferences.length === 0) {
@@ -249,7 +249,7 @@ Do not include any text before or after the JSON array. Do not use markdown or c
           
           console.log(`${rec.place_name}: ${distance.toFixed(2)}km from ${destination}`);
           
-          if (distance <= 100) {
+          if (distance <= 50) {
             // Additional verification: check if the place name contains the destination or is clearly in the destination
             const placeNameLower = rec.place_name.toLowerCase();
             const destinationLower = destination.toLowerCase();
@@ -267,11 +267,14 @@ Do not include any text before or after the JSON array. Do not use markdown or c
               placeNameLower.includes(city) && !destinationLower.includes(city)
             );
             
-            if (isInDestination && !isInWrongCity) {
+            // If the place is within 50km and not in the wrong city, it's likely valid
+            // The distance check is the primary filter, and most places within 50km of a destination
+            // are actually in that destination, even if they don't contain the destination name
+            if (!isInWrongCity) {
               verifiedRecommendations.push(rec);
-              console.log(`✓ Verified: ${rec.place_name} is in ${destination}`);
+              console.log(`✓ Verified: ${rec.place_name} is in ${destination} (${distance.toFixed(2)}km away)`);
             } else {
-              console.log(`✗ Filtered out ${rec.place_name} - not clearly in ${destination}`);
+              console.log(`✗ Filtered out ${rec.place_name} - appears to be in wrong city`);
             }
           } else {
             console.log(`✗ Filtered out ${rec.place_name} - too far (${distance.toFixed(2)}km)`);
@@ -282,7 +285,7 @@ Do not include any text before or after the JSON array. Do not use markdown or c
       }
       
       if (verifiedRecommendations.length === 0) {
-        throw new Error(`No recommendations within 100km of ${destination} found`);
+        throw new Error(`No recommendations within 50km of ${destination} found`);
       }
       
       return NextResponse.json({

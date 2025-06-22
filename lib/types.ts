@@ -130,5 +130,4 @@ export interface TripFormData {
   preferences: string[];
   mustSee: string;
   wakeupTime: string;
-  radius: string;
 }

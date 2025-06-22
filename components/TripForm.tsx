@@ -20,7 +20,6 @@ export interface TripFormData {
   preferences: string[]
   mustSee: string
   wakeupTime: string
-  radius: string
 }
 
 const budgetOptions = [
@@ -46,13 +45,6 @@ const wakeupTimeOptions = [
   { value: "late", label: "Leisurely Start", description: "9:00 - 11:00 AM", icon: "😴" },
 ]
 
-const radiusOptions = [
-  { value: "walkable", label: "Walking Distance", description: "Within 2-3 km", icon: "🚶" },
-  { value: "local", label: "Local Area", description: "Within 10-15 km", icon: "🚌" },
-  { value: "regional", label: "Regional", description: "Within 50 km", icon: "🚗" },
-  { value: "extended", label: "Extended Area", description: "Within 100 km", icon: "🚗" },
-]
-
 interface TripFormProps {
   onSubmit?: (data: TripFormData) => void
   isLoading?: boolean
@@ -67,7 +59,6 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     preferences: [],
     mustSee: "",
     wakeupTime: "",
-    radius: "",
   })
 
   const handleInputChange = (field: keyof TripFormData, value: string) => {
@@ -101,8 +92,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     formData.dateRange?.to && 
     formData.budget && 
     formData.preferences.length > 0 &&
-    formData.wakeupTime &&
-    formData.radius
+    formData.wakeupTime
 
   return (
     <form onSubmit={handleSubmit} className={cn("p-8 space-y-8 overflow-visible", className)}>
@@ -261,8 +251,9 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
           ))}
         </div>
       </div>
+
       {/* Must See */}
-      <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.6s" }}>
+      <div className="animate-fade-in overflow-visible" style={{ animationDelay: "0.5s" }}>
         <Label className="flex items-center space-x-2 text-lg font-semibold mb-4 px-4 text-cyan-600">
           <Eye className="h-5 w-5 text-cyan-600" />
           <span>Any must-see places or experiences?</span>
@@ -281,7 +272,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
       </div>
 
       {/* Submit Button */}
-      <div className="pt-8 animate-fade-in overflow-visible" style={{ animationDelay: "0.7s" }}>
+      <div className="pt-8 animate-fade-in overflow-visible" style={{ animationDelay: "0.6s" }}>
         <Button
           type="submit"
           disabled={!isFormValid || isLoading}
