@@ -12,18 +12,18 @@ export default function DayCard({ day }: DayCardProps) {
         <div className="flex items-center justify-between mb-6 overflow-visible">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl">
-              <Calendar className="h-6 w-6 text-white" />
-            </div>
-            <div>
+            <Calendar className="h-6 w-6 text-white" />
+          </div>
+          <div>
               <h2 className="text-2xl font-bold gradient-text-modern">Day {day.day}</h2>
-              <p className="text-gray-600 font-medium">
-                {new Date(day.date).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
+            <p className="text-gray-600 font-medium">
+              {new Date(day.date).toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
           </div>
           {day.dailyTotal !== undefined && (
             <div className="flex items-center space-x-2 glass-morphism px-4 py-2 rounded-full">

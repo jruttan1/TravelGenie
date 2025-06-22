@@ -28,7 +28,7 @@ export default function Home() {
           <div className="px-16 overflow-visible">
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
               <span className="gradient-text-modern block mb-2">Your Next Adventure</span>
-              <span className="cursive-text gradient-text-modern text-6xl md:text-8xl block px-8">Crafted by AI</span>
+              <span className="cursive-text gradient-text-modern text-6xl md:text-8xl block overflow-visible">Crafted by AI</span>
             </h1>
           </div>
 
@@ -71,7 +71,7 @@ export default function Home() {
       </div>
 
       {/* Features Section - Below the fold */}
-      <div className="relative z-10 py-20 px-8 overflow-visible">
+      <div className="relative z-10 pt-5 pb-10 px-8 overflow-visible">
         <div className="w-full max-w-7xl mx-auto overflow-visible">
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-8 mb-16 overflow-visible">

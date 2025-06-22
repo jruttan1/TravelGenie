@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Poppins, Dancing_Script } from "next/font/google"
 import "./globals.css"
+import 'mapbox-gl/dist/mapbox-gl.css'
 
 const poppins = Poppins({ 
   subsets: ["latin"],
