@@ -3,13 +3,13 @@
 
 export function createCalendar(eventName, eventDate, startTime, endTime, location, description)
 {
-    function standardizeTime(time)
+    function standardizeTime(date,time)
     {
         
     }
 
-    startTime = standardizeTime(startTime)
-    endTime = standardizeTime(endTime)
+    startTime = standardizeTime(eventDate, startTime)
+    endTime = standardizeTime(eventDate, endTime)
 
     let exportStr =
 `BEGIN:VCALENDAR
