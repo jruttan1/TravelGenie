@@ -111,7 +111,7 @@ export default function TripResultsPage() {
           
           // Fetch details for all recommendations
           const detailPromises = parsedRecommendations.map((rec: TripRecommendation) => 
-            fetchPlaceDetails(rec.place_name)
+            fetchPlaceDetails(rec.place_name, parsedFormData.destination)
           )
           
           // Wait for all place details to be fetched
@@ -175,7 +175,7 @@ export default function TripResultsPage() {
     setSelectedPlaces([])
   }
 
-  const fetchPlaceDetails = async (placeName: string) => {
+  const fetchPlaceDetails = async (placeName: string, destination: string) => {
     // Don't fetch if we already have the details or are already loading
     if (placeDetails[placeName] || loadingDetails[placeName]) return
 
@@ -189,7 +189,7 @@ export default function TripResultsPage() {
         },
         body: JSON.stringify({
           query: placeName,
-          destination: formData?.destination,
+          destination: destination,
         }),
       })
 

@@ -59,8 +59,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Search for the place with destination context
-    const searchQuery = destination ? `${query}, ${destination}` : query;
+    // Search for the place with destination context to reduce confusion
+    let searchQuery = query;
+    if (destination) {
+      // Clean up the query and destination to avoid duplication
+      const cleanQuery = query.trim();
+      const cleanDestination = destination.trim();
+      
+      // Check if the query already contains the destination name
+      const queryLower = cleanQuery.toLowerCase();
+      const destinationLower = cleanDestination.toLowerCase();
+      
+      if (!queryLower.includes(destinationLower)) {
+        // Append destination only if it's not already in the query
+        searchQuery = `${cleanQuery}, ${cleanDestination}`;
+      } else {
+        // If destination is already in query, use as is but ensure proper formatting
+        searchQuery = cleanQuery;   
+      }
+    }
+    
+    console.log(`Searching for: "${searchQuery}"`);
+    
     const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
     
     const searchResponse = await fetch(searchUrl);

@@ -177,7 +177,7 @@ Preferred wake-up time: ${wakeupTimeDisplay}
 Travel dates: ${dateRangeDisplay}
 
 Task:
-Generate a list of at least 9 engaging and diverse travel destination recommendations in or near the specified city. Base your suggestions on the user's budget, preferences, must-see locations, wake-up time, and travel dates.
+Generate a list of AT LEAST 9 engaging and diverse travel destination recommendations in or near the specified city. Base your suggestions on the user's budget, preferences, must-see locations, wake-up time, and travel dates.
 
 CRITICAL CONSTRAINTS:
 
@@ -204,7 +204,7 @@ Shopping districts, museums, or hidden gems
 
 Each entry must:
 
-Be a specific, named place that actually exists and fits the given constraints
+Be specific and use the full name of a place that actually exists and fits the given constraints
 
 Include a short description of no more than three concise sentences
 
@@ -255,10 +255,12 @@ Do not include any text before or after the JSON array. Do not use markdown or c
         throw new Error('No valid recommendations found');
       }
 
-      // Verify distances for all recommendations
+      // Verify distances and location accuracy for all recommendations
       const verifiedRecommendations = [];
       for (const rec of validRecommendations) {
+        // Get coordinates for the specific place
         const placeCoords = await getCoordinates(`${rec.place_name}, ${destination}`);
+        
         if (placeCoords) {
           const distance = calculateDistance(
             destinationCoords.lat, 
@@ -269,14 +271,36 @@ Do not include any text before or after the JSON array. Do not use markdown or c
           
           console.log(`${rec.place_name}: ${distance.toFixed(2)}km from ${destination}`);
           
+          // Check if within radius AND verify it's actually in the destination
           if (distance <= radiusValue) {
-            verifiedRecommendations.push(rec);
+            // Additional verification: check if the place name contains the destination or is clearly in the destination
+            const placeNameLower = rec.place_name.toLowerCase();
+            const destinationLower = destination.toLowerCase();
+            const destinationWords = destinationLower.split(/[\s,]+/).filter((word: string) => word.length > 2);
+            
+            // Check if any significant word from the destination appears in the place name or address
+            const isInDestination = destinationWords.some((word: string) => 
+              placeNameLower.includes(word) || 
+              (rec.address && rec.address.toLowerCase().includes(word))
+            );
+            
+            // Also check if the place is not clearly in another major city
+            const majorCities = ['new york', 'los angeles', 'chicago', 'houston', 'phoenix', 'philadelphia', 'san antonio', 'san diego', 'dallas', 'san jose'];
+            const isInWrongCity = majorCities.some((city: string) => 
+              placeNameLower.includes(city) && !destinationLower.includes(city)
+            );
+            
+            if (isInDestination && !isInWrongCity) {
+              verifiedRecommendations.push(rec);
+              console.log(`✓ Verified: ${rec.place_name} is in ${destination}`);
+            } else {
+              console.log(`✗ Filtered out ${rec.place_name} - not clearly in ${destination}`);
+            }
           } else {
-            console.log(`Filtered out ${rec.place_name} - too far (${distance.toFixed(2)}km)`);
+            console.log(`✗ Filtered out ${rec.place_name} - too far (${distance.toFixed(2)}km)`);
           }
         } else {
-          console.log(`Could not verify distance for ${rec.place_name} - keeping it`);
-          verifiedRecommendations.push(rec);
+          console.log(`⚠ Could not verify coordinates for ${rec.place_name} - filtering out for safety`);
         }
       }
       
