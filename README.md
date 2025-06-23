@@ -1,5 +1,9 @@
 # TravelGenie - AI-Powered Travel Planning Platform
 
+
+https://github.com/user-attachments/assets/c85fe437-77a3-4acf-b9d4-c9d3b9d790e7
+
+
 A comprehensive Next.js application that creates personalized travel itineraries using Google's Gemini 2.0 Flash AI, Google Places API, and Mapbox integration for the ultimate travel planning experience.
 
 ## Features
