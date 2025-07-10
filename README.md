@@ -6,7 +6,9 @@ TravelGenie is a Next.js application that creates personalized travel itinerarie
 
 ## Demo
 
-https://github.com/user-attachments/assets/c85fe437-77a3-4acf-b9d4-c9d3b9d790e7
+
+https://github.com/user-attachments/assets/69b5a721-1797-466a-b2d5-17c606812269
+
 
 ## Features
 
