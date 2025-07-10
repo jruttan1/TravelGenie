@@ -203,13 +203,76 @@ Return ONLY a valid JSON array with no additional text, markdown formatting, or 
 
 Do not include any text before or after the JSON array. Do not use markdown or code blocks. All property names must be in double quotes and all strings must be properly escaped.`;
 
-    // create a model instance
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Helper function to retry API calls with exponential backoff
+    const retryWithBackoff = async (fn: () => Promise<any>, maxRetries: number = 3): Promise<any> => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          return await fn();
+        } catch (error: any) {
+          console.log(`Attempt ${attempt} failed:`, error.message);
+          
+          // Check if it's a 503 overload error
+          const isOverloadError = error.message?.includes('503') || 
+                                 error.message?.includes('overloaded') || 
+                                 error.message?.includes('Service Unavailable');
+          
+          if (isOverloadError && attempt < maxRetries) {
+            // Exponential backoff: 2^attempt seconds + random jitter
+            const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+            console.log(`Service overloaded, retrying in ${delay.toFixed(0)}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          
+          // If it's the last attempt or not an overload error, throw
+          throw error;
+        }
+      }
+    };
 
-    // Generate content
-    const result = await model.generateContent(systemPrompt);
-    const response = await result.response;
-    const text = response.text();
+    // Try different models as fallbacks
+    const modelOptions = [
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-8b',
+      'gemini-1.0-pro'
+    ];
+
+    let text: string;
+    let modelUsed: string;
+
+    for (let i = 0; i < modelOptions.length; i++) {
+      const modelName = modelOptions[i];
+      console.log(`Trying model: ${modelName}`);
+      
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        
+        const result = await retryWithBackoff(async () => {
+          return await model.generateContent(systemPrompt);
+        });
+        
+        const response = await result.response;
+        text = response.text();
+        modelUsed = modelName;
+        console.log(`Successfully generated content using ${modelName}`);
+        break;
+        
+      } catch (error: any) {
+        console.error(`Model ${modelName} failed:`, error.message);
+        
+        // If this is the last model, throw the error
+        if (i === modelOptions.length - 1) {
+          throw new Error(`All Gemini models failed. Last error: ${error.message}`);
+        }
+        
+        console.log(`Trying next model...`);
+      }
+         }
+
+    // Ensure we have content to parse
+    if (!text) {
+      throw new Error('No content generated from any Gemini model');
+    }
 
     // Try to parse the JSON response
     try {
@@ -293,7 +356,8 @@ Do not include any text before or after the JSON array. Do not use markdown or c
         success: true,
         totalChecked: validRecommendations.length,
         withinDistance: verifiedRecommendations.length,
-        destinationCoords: destinationCoords
+        destinationCoords: destinationCoords,
+        modelUsed: modelUsed
       });
     } catch (parseError) {
       console.error('Failed to parse JSON response:', parseError);
@@ -305,7 +369,8 @@ Do not include any text before or after the JSON array. Do not use markdown or c
       return NextResponse.json({
         recommendations: fallbackRecommendations,
         success: true,
-        note: "Using fallback recommendations due to AI response parsing issue"
+        note: "Using fallback recommendations due to AI response parsing issue",
+        modelUsed: modelUsed || "fallback"
       });
     }
 

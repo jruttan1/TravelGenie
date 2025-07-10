@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react'
 import mapboxgl from 'mapbox-gl'
+import { UtensilsCrossed, Activity, ShoppingBag, Theater, MapPin, Clock, Calendar } from 'lucide-react'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 type Point = {
@@ -75,6 +76,322 @@ export default forwardRef<{ focusOnPoint: (lng: number, lat: number, name: strin
         }
       }
     }));
+
+    // Get category info for styling - consistent across legend and tooltips
+    const getCategoryInfo = (category: string) => {
+      switch (category) {
+        case 'breakfast':
+        case 'lunch': 
+        case 'dinner':
+        case 'meal':
+          return { 
+            icon: 'UtensilsCrossed', 
+            label: 'Dining', 
+            color: 'from-orange-400 to-orange-600', 
+            solidColor: '#ea580c',
+            textColor: '#ea580c'
+          };
+        case 'activity':
+        case 'sightseeing':
+          return { 
+            icon: 'Activity', 
+            label: 'Activities', 
+            color: 'from-blue-400 to-blue-600', 
+            solidColor: '#2563eb',
+            textColor: '#2563eb'
+          };
+        case 'entertainment':
+          return { 
+            icon: 'Theater', 
+            label: 'Entertainment', 
+            color: 'from-red-400 to-red-600', 
+            solidColor: '#dc2626',
+            textColor: '#dc2626'
+          };
+        case 'shopping':
+          return { 
+            icon: 'ShoppingBag', 
+            label: 'Shopping', 
+            color: 'from-green-400 to-green-600', 
+            solidColor: '#16a34a',
+            textColor: '#16a34a'
+          };
+        default:
+          return { 
+            icon: 'MapPin', 
+            label: 'Location', 
+            color: 'from-purple-400 to-purple-600', 
+            solidColor: '#9333ea',
+            textColor: '#9333ea'
+          };
+      }
+    };
+
+    const addMarkersToMap = () => {
+      console.log('🗺️ Adding markers to map');
+      
+      if (!mapRef.current) {
+        console.log('🗺️ No map reference');
+        return;
+      }
+
+      if (points.length === 0) {
+        console.log('🗺️ No points to add');
+        return;
+      }
+
+      // Clear existing markers
+      markersRef.current.forEach(marker => {
+        try {
+          marker.remove();
+        } catch (e) {
+          console.log('🗺️ Error removing existing marker:', e);
+        }
+      });
+      markersRef.current = [];
+
+      // Add new markers
+      points.forEach((point, index) => {
+        try {
+          // Create marker element with category-based colors
+          const el = document.createElement('div');
+          el.style.width = '16px';
+          el.style.height = '16px';
+          el.style.borderRadius = '50%';
+          el.style.border = '2px solid white';
+          el.style.cursor = 'pointer';
+          el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+          
+          // Set color based on category - using consistent color system
+          const markerCategoryInfo = getCategoryInfo(point.category);
+          el.style.backgroundColor = markerCategoryInfo.solidColor;
+
+          // Get category info for popup
+          const popupCategoryInfo = getCategoryInfo(point.category);
+
+          // Create popup with beautiful glass morphism design
+          const popupId = `popup-${index}-${Date.now()}`;
+          const popup = new mapboxgl.Popup({
+            offset: 25,
+            closeButton: false,
+            closeOnClick: false,
+            className: 'custom-popup'
+          }).setHTML(`
+            <div style="
+              background: rgba(255, 255, 255, 0.95);
+              backdrop-filter: blur(20px);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 12px;
+              padding: 16px;
+              min-width: 220px;
+              max-width: 260px;
+              box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+              font-family: 'Poppins', sans-serif;
+              position: relative;
+              overflow: hidden;
+            ">
+              <!-- Header with category badge -->
+              <div style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 12px;
+              ">
+                <div style="
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  background: ${popupCategoryInfo.solidColor};
+                  padding: 4px 10px;
+                  border-radius: 16px;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                ">
+                  <svg style="width: 12px; height: 12px; fill: white;" viewBox="0 0 24 24">
+                    ${popupCategoryInfo.icon === 'UtensilsCrossed' ? '<path d="M3 2l1.5 1.5L3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5l-1.5-1.5L21 2h-2.5l-1.5 1.5L15.5 2H14l1.5 1.5L14 5h1.5L17 6.5 18.5 5H20v14H4V5h1.5L7 6.5 8.5 5H10L8.5 3.5 10 2H8.5L7 3.5 5.5 2H3zm9 4h-2v3H7v2h3v3h2v-3h3V9h-3V6z"/>' :
+                      popupCategoryInfo.icon === 'Activity' ? '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>' :
+                      popupCategoryInfo.icon === 'Theater' ? '<path d="M2 16.5A2.5 2.5 0 0 0 4.5 19h15a2.5 2.5 0 0 0 2.5-2.5V8a2.5 2.5 0 0 0-2.5-2.5h-15A2.5 2.5 0 0 0 2 8v8.5z M4 8h16v8H4V8z M8 10v4h8v-4H8z"/>' :
+                      popupCategoryInfo.icon === 'ShoppingBag' ? '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4H6z M3.8 6L6 3.2h12L20.2 6H3.8z M16 10a4 4 0 0 1-8 0h2a2 2 0 0 0 4 0h2z"/>' :
+                      '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>'}
+                  </svg>
+                  <span style="
+                    color: white;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                  ">${popupCategoryInfo.label}</span>
+                </div>
+                
+                <button onclick="
+                  const popupElement = this.closest('.mapboxgl-popup');
+                  const marker = popupElement.marker;
+                  if (marker && marker.getPopup()) {
+                    marker.getPopup().remove();
+                  } else {
+                    popupElement.remove();
+                  }
+                " style="
+                  background: rgba(107, 114, 128, 0.1);
+                  border: none;
+                  border-radius: 50%;
+                  width: 24px;
+                  height: 24px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  cursor: pointer;
+                  transition: all 0.2s ease;
+                  color: #6B7280;
+                " onmouseover="this.style.background='rgba(107, 114, 128, 0.2)'" onmouseout="this.style.background='rgba(107, 114, 128, 0.1)'">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Title -->
+              <h3 style="
+                font-size: 16px;
+                font-weight: 700;
+                color: #1F2937;
+                margin: 0 0 10px 0;
+                line-height: 1.3;
+              ">${point.name}</h3>
+
+              <!-- Meta information -->
+              <div style="
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                margin-bottom: 12px;
+              ">
+                ${point.time ? `
+                  <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 6px 10px;
+                    background: rgba(16, 185, 129, 0.1);
+                    border-radius: 6px;
+                    border-left: 2px solid #10B981;
+                  ">
+                    <svg style="width: 12px; height: 12px; fill: #059669;" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12,6 12,12 16,14"/>
+                    </svg>
+                    <span style="
+                      color: #059669;
+                      font-size: 13px;
+                      font-weight: 600;
+                    ">${point.time}</span>
+                  </div>
+                ` : ''}
+                
+                ${currentDay ? `
+                  <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 6px 10px;
+                    background: rgba(59, 130, 246, 0.1);
+                    border-radius: 6px;
+                    border-left: 2px solid #3B82F6;
+                  ">
+                    <svg style="width: 12px; height: 12px; fill: #2563EB;" viewBox="0 0 24 24">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span style="
+                      color: #2563EB;
+                      font-size: 13px;
+                      font-weight: 600;
+                    ">Day ${currentDay}</span>
+                  </div>
+                ` : ''}
+              </div>
+
+              ${point.description ? `
+                <!-- Description -->
+                <div style="
+                  padding: 12px;
+                  background: rgba(249, 250, 251, 0.8);
+                  border-radius: 8px;
+                  border: 1px solid rgba(229, 231, 235, 0.5);
+                  margin-top: 12px;
+                ">
+                  <p style="
+                    color: #374151;
+                    font-size: 13px;
+                    line-height: 1.5;
+                    margin: 0;
+                    font-weight: 400;
+                  ">${point.description}</p>
+                </div>
+              ` : ''}
+
+              <!-- Decorative gradient overlay -->
+              <div style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: ${popupCategoryInfo.solidColor};
+                border-radius: 12px 12px 0 0;
+              "></div>
+            </div>
+          `);
+
+          // Create marker
+          const marker = new mapboxgl.Marker({
+            element: el,
+            anchor: 'center'
+          })
+          .setLngLat([point.lng, point.lat])
+          .setPopup(popup);
+
+          // Add to map
+          if (mapRef.current) {
+            marker.addTo(mapRef.current);
+            markersRef.current.push(marker);
+            popupsRef.current.push(popup);
+            
+            // Store marker reference in popup for close button
+            popup.on('open', () => {
+              const popupElement = document.querySelector('.mapboxgl-popup');
+              if (popupElement) {
+                (popupElement as any).marker = marker;
+              }
+            });
+          }
+          
+          console.log(`🗺️ Added marker ${index + 1}: ${point.name} (${point.category}) at [${point.lng}, ${point.lat}]`);
+        } catch (error) {
+          console.error(`🗺️ Failed to add marker for ${point.name}:`, error);
+        }
+      });
+
+      // Fit bounds if multiple points
+      if (points.length > 1) {
+        try {
+          const bounds = new mapboxgl.LngLatBounds();
+          points.forEach(point => {
+            bounds.extend([point.lng, point.lat]);
+          });
+          
+          mapRef.current!.fitBounds(bounds, {
+            padding: 50,
+            maxZoom: 15
+          });
+          
+          console.log('🗺️ Fitted bounds for', points.length, 'points');
+        } catch (error) {
+          console.error('🗺️ Failed to fit bounds:', error);
+        }
+      }
+    };
 
     useEffect(() => {
       // Cleanup function
@@ -170,125 +487,6 @@ export default forwardRef<{ focusOnPoint: (lng: number, lat: number, name: strin
       return cleanup;
     }, [points]);
 
-    const addMarkersToMap = () => {
-      console.log('🗺️ Adding markers to map');
-      
-      if (!mapRef.current) {
-        console.log('🗺️ No map reference');
-        return;
-      }
-
-      if (points.length === 0) {
-        console.log('🗺️ No points to add');
-        return;
-      }
-
-      // Clear existing markers
-      markersRef.current.forEach(marker => {
-        try {
-          marker.remove();
-        } catch (e) {
-          console.log('🗺️ Error removing existing marker:', e);
-        }
-      });
-      markersRef.current = [];
-
-      // Add new markers
-      points.forEach((point, index) => {
-        try {
-          // Create marker element with category-based colors
-          const el = document.createElement('div');
-          el.style.width = '16px';
-          el.style.height = '16px';
-          el.style.borderRadius = '50%';
-          el.style.border = '2px solid white';
-          el.style.cursor = 'pointer';
-          el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-          
-          // Set color based on category
-          switch (point.category) {
-            case 'breakfast':
-              el.style.backgroundColor = '#FF6B35'; // Orange
-              break;
-            case 'lunch':
-              el.style.backgroundColor = '#F7931E'; // Yellow-orange
-              break;
-            case 'dinner':
-              el.style.backgroundColor = '#E67E22'; // Dark orange
-              break;
-            case 'meal':
-              el.style.backgroundColor = '#FF8C00'; // Default meal color
-              break;
-            case 'activity':
-            case 'sightseeing':
-              el.style.backgroundColor = '#3498DB'; // Blue
-              break;
-            case 'entertainment':
-              el.style.backgroundColor = '#E74C3C'; // Red
-              break;
-            case 'shopping':
-              el.style.backgroundColor = '#27AE60'; // Green
-              break;
-            default:
-              el.style.backgroundColor = '#9B59B6'; // Purple for other
-          }
-
-          // Create popup with enhanced content
-          const popup = new mapboxgl.Popup({
-            offset: 25,
-            closeButton: true,
-            closeOnClick: false
-          }).setHTML(`
-            <div style="padding: 8px; min-width: 200px; max-width: 300px;">
-              <strong style="color: #2c3e50; font-size: 14px;">${point.name}</strong>
-              ${point.time ? `<br/><small style="color: #7f8c8d;">🕐 ${point.time}</small>` : ''}
-              ${point.category ? `<br/><small style="color: #7f8c8d;">📍 ${point.category}</small>` : ''}
-              ${currentDay ? `<br/><small style="color: #7f8c8d;">📅 Day ${currentDay}</small>` : ''}
-              ${point.description ? `<br/><div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #ecf0f1; font-size: 12px; color: #34495e; line-height: 1.4;">${point.description}</div>` : ''}
-            </div>
-          `);
-
-          // Create marker
-          const marker = new mapboxgl.Marker({
-            element: el,
-            anchor: 'center'
-          })
-          .setLngLat([point.lng, point.lat])
-          .setPopup(popup);
-
-          // Add to map
-          if (mapRef.current) {
-            marker.addTo(mapRef.current);
-            markersRef.current.push(marker);
-            popupsRef.current.push(popup);
-          }
-          
-          console.log(`🗺️ Added marker ${index + 1}: ${point.name} (${point.category}) at [${point.lng}, ${point.lat}]`);
-        } catch (error) {
-          console.error(`🗺️ Failed to add marker for ${point.name}:`, error);
-        }
-      });
-
-      // Fit bounds if multiple points
-      if (points.length > 1) {
-        try {
-          const bounds = new mapboxgl.LngLatBounds();
-          points.forEach(point => {
-            bounds.extend([point.lng, point.lat]);
-          });
-          
-          mapRef.current!.fitBounds(bounds, {
-            padding: 50,
-            maxZoom: 15
-          });
-          
-          console.log('🗺️ Fitted bounds for', points.length, 'points');
-        } catch (error) {
-          console.error('🗺️ Failed to fit bounds:', error);
-        }
-      }
-    };
-
     return (
       <div className="w-full h-full relative bg-gray-100">
         <div
@@ -323,32 +521,84 @@ export default forwardRef<{ focusOnPoint: (lng: number, lat: number, name: strin
 
         {status === 'ready' && points.length > 0 && (
           <>
-            <div className="absolute top-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs">
-              {points.length} location{points.length !== 1 ? 's' : ''}
-              {currentDay && (
-                <span className="ml-2 text-blue-600 font-medium">• Day {currentDay}</span>
-              )}
+            <div className="absolute top-4 left-4 glass-morphism rounded-xl px-4 py-2 shadow-lg border border-white/20 backdrop-blur-md animate-fade-in">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">
+                  {points.length} location{points.length !== 1 ? 's' : ''}
+                </span>
+                {currentDay && (
+                  <>
+                    <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-4 h-4 rounded bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">📅</span>
+                      </div>
+                      <span className="text-sm font-semibold text-blue-600">Day {currentDay}</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             
             {/* Legend */}
-            <div className="absolute bottom-2 left-2 bg-white bg-opacity-90 px-3 py-2 rounded text-xs shadow-sm">
-              <div className="font-medium mb-1">Legend:</div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                  <span>Meals</span>
+            <div className="absolute bottom-4 left-4 glass-morphism rounded-2xl p-4 shadow-lg border border-white/20 backdrop-blur-md min-w-[200px] animate-fade-in">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                  <MapPin className="w-3 h-3 text-white" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span>Activities</span>
+                <h3 className="font-semibold text-gray-800 text-sm">Map Legend</h3>
+              </div>
+              
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-3 group hover:bg-white/20 rounded-lg px-2 py-1.5 transition-all duration-200">
+                  <div className="relative">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-orange-400 to-orange-600 shadow-sm"></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full opacity-30 animate-pulse" style={{ backgroundColor: '#ea580c' }}></div>
+                  </div>
+                  <UtensilsCrossed className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-orange-600 transition-colors">Dining</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span>Shopping</span>
+                
+                <div className="flex items-center gap-3 group hover:bg-white/20 rounded-lg px-2 py-1.5 transition-all duration-200">
+                  <div className="relative">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 shadow-sm"></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full opacity-30 animate-pulse" style={{ backgroundColor: '#2563eb' }}></div>
+                  </div>
+                  <Activity className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Activities</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <span>Entertainment</span>
+                
+                <div className="flex items-center gap-3 group hover:bg-white/20 rounded-lg px-2 py-1.5 transition-all duration-200">
+                  <div className="relative">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-green-400 to-green-600 shadow-sm"></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full opacity-30 animate-pulse" style={{ backgroundColor: '#16a34a' }}></div>
+                  </div>
+                  <ShoppingBag className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-green-600 transition-colors">Shopping</span>
+                </div>
+                
+                <div className="flex items-center gap-3 group hover:bg-white/20 rounded-lg px-2 py-1.5 transition-all duration-200">
+                  <div className="relative">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-400 to-red-600 shadow-sm"></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full opacity-30 animate-pulse" style={{ backgroundColor: '#dc2626' }}></div>
+                  </div>
+                  <Theater className="w-4 h-4 text-red-600" />
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-red-600 transition-colors">Entertainment</span>
+                </div>
+                
+                <div className="flex items-center gap-3 group hover:bg-white/20 rounded-lg px-2 py-1.5 transition-all duration-200">
+                  <div className="relative">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 shadow-sm"></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full opacity-30 animate-pulse" style={{ backgroundColor: '#9333ea' }}></div>
+                  </div>
+                  <MapPin className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition-colors">Location</span>
+                </div>
+              </div>
+              
+              <div className="mt-3 pt-3 border-t border-white/20">
+                <div className="text-xs text-gray-500 text-center">
+                  Click markers for details
                 </div>
               </div>
             </div>

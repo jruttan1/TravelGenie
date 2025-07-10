@@ -1,15 +1,18 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Sparkles } from "lucide-react"
 import TripForm, { TripFormData } from "@/components/TripForm"
 
 export default function PlanTrip() {
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleFormSubmit = async (formData: any) => {
     console.log('Plan page received form data:', formData)
     setIsLoading(true)
+    let isNavigating = false
     
     try {
       console.log('Making API call to /api/trip-plan')
@@ -27,28 +30,53 @@ export default function PlanTrip() {
         const data = await response.json()
         console.log('API response data:', data)
         
-        // Store recommendations and form data in localStorage
-        localStorage.setItem('tripRecommendations', JSON.stringify(data.recommendations))
-        localStorage.setItem('tripFormData', JSON.stringify(formData))
-        
-        // Generate a unique trip ID
-        const tripId = `${formData.destination.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
-        localStorage.setItem('tripId', tripId)
-        
-        // Navigate to the results page
-        window.location.href = '/trip/results'
+        try {
+          // Store recommendations and form data in localStorage
+          console.log('Storing data in localStorage...')
+          localStorage.setItem('tripRecommendations', JSON.stringify(data.recommendations))
+          localStorage.setItem('tripFormData', JSON.stringify(formData))
+          
+          // Generate a unique trip ID
+          const tripId = `${formData.destination.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+          localStorage.setItem('tripId', tripId)
+          
+          console.log('localStorage data stored successfully, navigating to results...')
+          
+          // Navigate to the results page - use a small delay to ensure localStorage is written
+          isNavigating = true
+          setTimeout(() => {
+            console.log('Navigating to /trip/results')
+            router.push('/trip/results')
+          }, 100)
+          
+          // Return early to prevent finally block from running immediately
+          return
+          
+        } catch (storageError) {
+          console.error('Error storing to localStorage:', storageError)
+          // Try navigation anyway
+          console.log('Attempting navigation despite storage error...')
+          isNavigating = true
+          router.push('/trip/results')
+          return
+        }
       } else {
         const errorData = await response.text()
         console.error('API request failed:', response.status, errorData)
         // Fallback to the default navigation
-        window.location.href = "/trip/paris-3days-art-food"
+        isNavigating = true
+        router.push("/trip/paris-3days-art-food")
       }
     } catch (error) {
       console.error('Error calling trip-plan API:', error)
       // Fallback to the default navigation
-      window.location.href = "/trip/paris-3days-art-food"
+      isNavigating = true
+      router.push("/trip/paris-3days-art-food")
     } finally {
-      setIsLoading(false)
+      // Only stop loading if we're not navigating away
+      if (!isNavigating) {
+        setIsLoading(false)
+      }
     }
   }
 
