@@ -4,6 +4,8 @@
 
 TravelGenie is a Next.js application that creates personalized travel itineraries using Google's Gemini AI, Google Places API, and Mapbox integration.
 
+## Demo
+
 https://github.com/user-attachments/assets/c85fe437-77a3-4acf-b9d4-c9d3b9d790e7
 
 ## Features

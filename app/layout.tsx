@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Poppins, Dancing_Script } from "next/font/google"
 import "./globals.css"
 import 'mapbox-gl/dist/mapbox-gl.css'
+import Head from "next/head"
 
 const poppins = Poppins({ 
   subsets: ["latin"],
@@ -18,7 +19,6 @@ const dancingScript = Dancing_Script({
 export const metadata: Metadata = {
   title: "TravelGenie AI",
   description: "Your AI-powered travel planning companion",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -28,6 +28,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <Head>
+      <link rel="icon" href="/favicon.ico" />
+      </Head>
       <body className={`${poppins.className} ${dancingScript.variable} min-h-screen`}>
         <main className="min-h-screen">{children}</main>
       </body>
