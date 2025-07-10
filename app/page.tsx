@@ -116,10 +116,10 @@ export default function Home() {
       </div>
 
       {/* Features Section - Below the fold */}
-      <div className="relative z-10 pt-5 pb-10 px-8 overflow-visible">
+      <div className="relative z-10 pt-5 pb-3 px-8 overflow-visible">
         <div className="w-full max-w-7xl mx-auto overflow-visible">
           {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16 overflow-visible">
+          <div className="grid md:grid-cols-3 gap-8 mb-0 overflow-visible">
             {/* Feature 1 */}
             <div className="glass-morphism p-8 rounded-2xl text-center hover:transform hover:scale-105 transition-all duration-300 overflow-visible">
               <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
@@ -143,30 +143,12 @@ export default function Home() {
               <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-violet-600">
                 <Plane className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4 px-4 text-purple-600">Seamless</h3>
+              <h3 className="text-2xl font-semibold px-4 text-purple-600">Seamless</h3>
               <p className="text-lg px-4 leading-relaxed text-gray-600">From planning to booking, enjoy a smooth and effortless travel experience</p>
-            </div>
-          </div>
-
-          {/* Social Proof */}
-          <div className="text-center overflow-visible">
-            <div className="glass-morphism p-8 rounded-2xl max-w-3xl mx-auto overflow-visible">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-6 w-6 fill-current text-amber-400" />
-                ))}
-              </div>
-              <p className="text-xl font-medium mb-3 px-4 text-blue-600">
-                "TravelGenie transformed how I plan trips!"
-              </p>
-              <p className="text-lg px-4 leading-relaxed text-gray-600">
-                - Over 10k+ happy travelers
-              </p>
             </div>
           </div>
         </div>
       </div>
-      
       {/* Footer - Only on homepage */}
       <Footer />
     </div>
