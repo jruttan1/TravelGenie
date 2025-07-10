@@ -2,17 +2,39 @@
 
 import Link from "next/link"
 import { ArrowRight, MapPin, Sparkles, Plane, Star, ChevronDown, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Footer from "@/components/Footer"
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true)
   const router = useRouter()
 
   const handleStartPlanning = () => {
     setIsLoading(true)
     router.push('/plan')
   }
+
+  // Listen for scroll events
+  useEffect(() => {
+    const handleScroll = () => {
+      // If user scrolled more than 100 pixels, hide the indicator
+      if (window.scrollY > 100) {
+        setShowScrollIndicator(false)
+      } else {
+        setShowScrollIndicator(true)
+      }
+    }
+
+    // Add the scroll event listener
+    window.addEventListener('scroll', handleScroll)
+
+    // Cleanup function - remove the listener when component unmounts
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, []) // Empty dependency array means this runs once when component mounts
 
   return (
     <div className="min-h-screen dotted-background relative overflow-visible">
@@ -75,8 +97,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Modern Scroll Indicator */}
-      <div className="fixed bottom-0 left-0 right-0 h-24 z-30 pointer-events-none overflow-visible">
+      {/* Modern Scroll Indicator - Fades out when scrolling */}
+      <div className={`fixed bottom-0 left-0 right-0 h-24 z-30 pointer-events-none overflow-visible transition-opacity duration-500 ${showScrollIndicator ? 'opacity-100' : 'opacity-0'}`}>
         {/* Modern Gradient Background */}
         <div 
           className="absolute inset-0"
@@ -84,20 +106,20 @@ export default function Home() {
             background: 'linear-gradient(to top, rgba(59, 130, 246, 0.4) 0%, rgba(99, 102, 241, 0.3) 30%, rgba(139, 92, 246, 0.2) 60%, transparent 100%)'
           }}
         />
-        
-        {/* Scroll Arrow */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-          <div className="bg-white bg-opacity-20 backdrop-blur-sm border border-white border-opacity-30 p-4 rounded-full cursor-pointer hover:scale-110 transition-all duration-300 animate-bounce">
-            <ChevronDown className="h-6 w-6 text-white" />
-          </div>
+      </div>
+      
+      {/* Scroll Arrow - Separate from gradient background */}
+      <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 pointer-events-auto transition-opacity duration-500 ${showScrollIndicator ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="bg-white bg-opacity-80 backdrop-blur-sm border border-white border-opacity-60 p-4 rounded-full cursor-pointer hover:scale-110 transition-transform duration-300 animate-bounce shadow-lg">
+          <ChevronDown className="h-6 w-6 text-gray-700" />
         </div>
       </div>
 
       {/* Features Section - Below the fold */}
-      <div className="relative z-10 pt-5 pb-10 px-8 overflow-visible">
+      <div className="relative z-10 pt-5 pb-3 px-8 overflow-visible">
         <div className="w-full max-w-7xl mx-auto overflow-visible">
           {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16 overflow-visible">
+          <div className="grid md:grid-cols-3 gap-8 mb-0 overflow-visible">
             {/* Feature 1 */}
             <div className="glass-morphism p-8 rounded-2xl text-center hover:transform hover:scale-105 transition-all duration-300 overflow-visible">
               <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
@@ -121,29 +143,14 @@ export default function Home() {
               <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-violet-600">
                 <Plane className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4 px-4 text-purple-600">Seamless</h3>
+              <h3 className="text-2xl font-semibold px-4 text-purple-600">Seamless</h3>
               <p className="text-lg px-4 leading-relaxed text-gray-600">From planning to booking, enjoy a smooth and effortless travel experience</p>
-            </div>
-          </div>
-
-          {/* Social Proof */}
-          <div className="text-center overflow-visible">
-            <div className="glass-morphism p-8 rounded-2xl max-w-3xl mx-auto overflow-visible">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-6 w-6 fill-current text-amber-400" />
-                ))}
-              </div>
-              <p className="text-xl font-medium mb-3 px-4 text-blue-600">
-                "TravelGenie transformed how I plan trips!"
-              </p>
-              <p className="text-lg px-4 leading-relaxed text-gray-600">
-                - Over 10k+ happy travelers
-              </p>
             </div>
           </div>
         </div>
       </div>
+      {/* Footer - Only on homepage */}
+      <Footer />
     </div>
   )
 }
