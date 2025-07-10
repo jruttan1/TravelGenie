@@ -143,17 +143,21 @@ export default function LocationAutocomplete({
 
   // Handle suggestion selection
   const handleSuggestionSelect = (prediction: PlacePrediction) => {
+    console.log('Location selected:', prediction.description)
     setInputValue(prediction.description)
     setShowSuggestions(false)
     setPredictions([])
     setSelectedIndex(-1)
     
-    onLocationSelect({
-      description: prediction.description,
-      place_id: prediction.place_id,
-      main_text: prediction.structured_formatting.main_text,
-      secondary_text: prediction.structured_formatting.secondary_text
-    })
+    // Use setTimeout to ensure state updates are processed
+    setTimeout(() => {
+      onLocationSelect({
+        description: prediction.description,
+        place_id: prediction.place_id,
+        main_text: prediction.structured_formatting.main_text,
+        secondary_text: prediction.structured_formatting.secondary_text
+      })
+    }, 0)
   }
 
   // Handle keyboard navigation

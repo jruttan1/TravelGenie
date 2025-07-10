@@ -8,9 +8,11 @@ export default function PlanTrip() {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleFormSubmit = async (formData: any) => {
+    console.log('Plan page received form data:', formData)
     setIsLoading(true)
     
     try {
+      console.log('Making API call to /api/trip-plan')
       const response = await fetch('/api/trip-plan', {
         method: 'POST',
         headers: {
@@ -19,8 +21,11 @@ export default function PlanTrip() {
         body: JSON.stringify(formData),
       })
 
+      console.log('API response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('API response data:', data)
         
         // Store recommendations and form data in localStorage
         localStorage.setItem('tripRecommendations', JSON.stringify(data.recommendations))
@@ -33,7 +38,8 @@ export default function PlanTrip() {
         // Navigate to the results page
         window.location.href = '/trip/results'
       } else {
-        console.error('Failed to get recommendations')
+        const errorData = await response.text()
+        console.error('API request failed:', response.status, errorData)
         // Fallback to the default navigation
         window.location.href = "/trip/paris-3days-art-food"
       }

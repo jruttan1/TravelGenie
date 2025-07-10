@@ -202,8 +202,38 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (onSubmit && isFormValid) {
+    // Add debugging to see what's happening
+    console.log('Form submission attempt:', {
+      formData,
+      isFormValid,
+      destination: formData.destination,
+      dateRange: formData.dateRange,
+      budget: formData.budget,
+      preferences: formData.preferences,
+      wakeupTime: formData.wakeupTime
+    })
+    
+    // Double-check validation with current state
+    const isValid = 
+      formData.destination && 
+      formData.dateRange?.from && 
+      formData.dateRange?.to && 
+      formData.budget && 
+      formData.preferences.length > 0 &&
+      formData.wakeupTime
+    
+    if (onSubmit && isValid) {
+      console.log('Form is valid, calling onSubmit')
       onSubmit(formData)
+    } else {
+      console.log('Form validation failed:', {
+        hasDestination: !!formData.destination,
+        hasDateFrom: !!formData.dateRange?.from,
+        hasDateTo: !!formData.dateRange?.to,
+        hasBudget: !!formData.budget,
+        hasPreferences: formData.preferences.length > 0,
+        hasWakeupTime: !!formData.wakeupTime
+      })
     }
   }
 
@@ -213,7 +243,6 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
     formData.dateRange?.to && 
     formData.budget && 
     formData.preferences.length > 0 &&
-    formData.wakeupTime
     formData.wakeupTime
 
   return (
@@ -226,7 +255,7 @@ export default function TripForm({ onSubmit, isLoading = false, className }: Tri
         </Label>
         <LocationAutocomplete
           onLocationSelect={(location) => handleInputChange("destination", location.description)}
-          placeholder="Search for a destination..."
+          placeholder="Search for a city you would like to visit..."
           value={formData.destination || ""}
           className="w-full"
         />

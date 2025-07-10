@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { ArrowRight, MapPin, Sparkles, Plane, Star, ChevronDown, Loader2 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Footer from "@/components/Footer"
 
@@ -11,10 +11,38 @@ export default function Home() {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true)
   const router = useRouter()
 
-  const handleStartPlanning = () => {
-    setIsLoading(true)
-    router.push('/plan')
-  }
+  const handleStartPlanning = useCallback(async () => {
+    // Prevent double-clicks
+    if (isLoading) {
+      console.log('Button already loading, ignoring click')
+      return
+    }
+
+    console.log('Start Planning button clicked')
+    
+    try {
+      setIsLoading(true)
+      
+      // Small delay to ensure state updates
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Navigate to plan page
+      await router.push('/plan')
+      console.log('Navigation successful')
+      
+    } catch (error) {
+      console.error('Navigation failed:', error)
+      setIsLoading(false) // Reset loading state on error
+    }
+    
+    // Fallback timeout to reset loading state (in case navigation hangs)
+    setTimeout(() => {
+      if (isLoading) {
+        console.log('Navigation timeout, resetting loading state')
+        setIsLoading(false)
+      }
+    }, 5000)
+  }, [isLoading, router])
 
   // Listen for scroll events
   useEffect(() => {
@@ -75,11 +103,17 @@ export default function Home() {
           </div>
 
           {/* CTA Button */}
-          <div className="pt-8 animate-slide-up overflow-visible">
+          <div className="pt-8 animate-slide-up overflow-visible relative z-50">
             <button 
-              onClick={handleStartPlanning}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleStartPlanning()
+              }}
               disabled={isLoading}
-              className="modern-button group inline-flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="modern-button group inline-flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none relative z-50"
+              style={{ pointerEvents: 'auto' }}
             >
               {isLoading ? (
                 <>
@@ -116,35 +150,43 @@ export default function Home() {
       </div>
 
       {/* Features Section - Below the fold */}
-      <div className="relative z-10 pt-5 pb-3 px-8 overflow-visible">
+      <div className="relative z-10 pt-12 pb-3 px-8 overflow-visible">
         <div className="w-full max-w-7xl mx-auto overflow-visible">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <h3 className="text-4xl md:text-5xl font-bold gradient-text-modern mb-4">
+               Why TravelGenie?
+            </h3>
+        
+          </div>
+          
           {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-8 mb-0 overflow-visible">
-            {/* Feature 1 */}
-            <div className="glass-morphism p-8 rounded-2xl text-center hover:transform hover:scale-105 transition-all duration-300 overflow-visible">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
-                <Sparkles className="h-10 w-10 text-white" />
+          <div className="grid md:grid-cols-3 gap-10 mb-0 overflow-visible">
+            {/* Feature 1 - AI-Powered */}
+            <div className="glass-morphism p-10 rounded-3xl text-center hover:transform hover:scale-105 hover:shadow-2xl transition-all duration-300 overflow-visible group border border-blue-100">
+              <div className="w-24 h-24 mx-auto mb-8 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 shadow-xl group-hover:shadow-2xl transition-shadow duration-300">
+                <Sparkles className="h-12 w-12 text-white" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4 px-4 text-blue-600">AI-Powered</h3>
-              <p className="text-lg px-4 leading-relaxed text-gray-600">Smart algorithms analyze your preferences to create the perfect itinerary</p>
+              <h3 className="text-2xl font-bold mb-4 px-4 text-blue-600">AI-Powered</h3>
+              <p className="text-base px-4 leading-relaxed text-gray-700">Google Gemini AI generates detailed day-by-day itineraries with activities, restaurants, and local insights based on your trip details</p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="glass-morphism p-8 rounded-2xl text-center hover:transform hover:scale-105 transition-all duration-300 overflow-visible">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-cyan-600">
-                <MapPin className="h-10 w-10 text-white" />
+            {/* Feature 2 - Personalized */}
+            <div className="glass-morphism p-10 rounded-3xl text-center hover:transform hover:scale-105 hover:shadow-2xl transition-all duration-300 overflow-visible group border border-emerald-100">
+              <div className="w-24 h-24 mx-auto mb-8 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 shadow-xl group-hover:shadow-2xl transition-shadow duration-300">
+                <MapPin className="h-12 w-12 text-white" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4 px-4 text-emerald-600">Personalized</h3>
-              <p className="text-lg px-4 leading-relaxed text-gray-600">Every recommendation is tailored to your unique travel style and interests</p>
+              <h3 className="text-2xl font-bold mb-4 px-4 text-emerald-600">Personalized</h3>
+              <p className="text-base px-4 leading-relaxed text-gray-700">Customize by budget, interests, wake-up preferences, and must-see attractions with Google Places location search</p>
             </div>
 
-            {/* Feature 3 */}
-            <div className="glass-morphism p-8 rounded-2xl text-center hover:transform hover:scale-105 transition-all duration-300 overflow-visible">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-violet-600">
-                <Plane className="h-10 w-10 text-white" />
+            {/* Feature 3 - Effortless */}
+            <div className="glass-morphism p-10 rounded-3xl text-center hover:transform hover:scale-105 hover:shadow-2xl transition-all duration-300 overflow-visible group border border-purple-100">
+              <div className="w-24 h-24 mx-auto mb-8 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 via-violet-600 to-indigo-600 shadow-xl group-hover:shadow-2xl transition-shadow duration-300">
+                <Plane className="h-12 w-12 text-white" />
               </div>
-              <h3 className="text-2xl font-semibold px-4 text-purple-600">Seamless</h3>
-              <p className="text-lg px-4 leading-relaxed text-gray-600">From planning to booking, enjoy a smooth and effortless travel experience</p>
+              <h3 className="text-2xl font-bold mb-4 px-4 text-purple-600">Effortless</h3>
+              <p className="text-base px-4 leading-relaxed text-gray-700">No sign-up required. Just fill out your preferences and get your complete travel itinerary instantly</p>
             </div>
           </div>
         </div>
