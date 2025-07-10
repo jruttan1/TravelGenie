@@ -283,7 +283,7 @@ Return ONLY valid JSON:
 
     // Generate content with Gemini
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       generationConfig: {
         maxOutputTokens: dayAmount > 7 ? 8192 : 4096, // Higher limit for longer trips
         temperature: 0.7,

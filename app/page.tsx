@@ -2,17 +2,39 @@
 
 import Link from "next/link"
 import { ArrowRight, MapPin, Sparkles, Plane, Star, ChevronDown, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Footer from "@/components/Footer"
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true)
   const router = useRouter()
 
   const handleStartPlanning = () => {
     setIsLoading(true)
     router.push('/plan')
   }
+
+  // Listen for scroll events
+  useEffect(() => {
+    const handleScroll = () => {
+      // If user scrolled more than 100 pixels, hide the indicator
+      if (window.scrollY > 100) {
+        setShowScrollIndicator(false)
+      } else {
+        setShowScrollIndicator(true)
+      }
+    }
+
+    // Add the scroll event listener
+    window.addEventListener('scroll', handleScroll)
+
+    // Cleanup function - remove the listener when component unmounts
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, []) // Empty dependency array means this runs once when component mounts
 
   return (
     <div className="min-h-screen dotted-background relative overflow-visible">
@@ -75,8 +97,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Modern Scroll Indicator */}
-      <div className="fixed bottom-0 left-0 right-0 h-24 z-30 pointer-events-none overflow-visible">
+      {/* Modern Scroll Indicator - Fades out when scrolling */}
+      <div className={`fixed bottom-0 left-0 right-0 h-24 z-30 pointer-events-none overflow-visible transition-opacity duration-500 ${showScrollIndicator ? 'opacity-100' : 'opacity-0'}`}>
         {/* Modern Gradient Background */}
         <div 
           className="absolute inset-0"
@@ -84,12 +106,12 @@ export default function Home() {
             background: 'linear-gradient(to top, rgba(59, 130, 246, 0.4) 0%, rgba(99, 102, 241, 0.3) 30%, rgba(139, 92, 246, 0.2) 60%, transparent 100%)'
           }}
         />
-        
-        {/* Scroll Arrow */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-          <div className="bg-white bg-opacity-20 backdrop-blur-sm border border-white border-opacity-30 p-4 rounded-full cursor-pointer hover:scale-110 transition-all duration-300 animate-bounce">
-            <ChevronDown className="h-6 w-6 text-white" />
-          </div>
+      </div>
+      
+      {/* Scroll Arrow - Separate from gradient background */}
+      <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 pointer-events-auto transition-opacity duration-500 ${showScrollIndicator ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="bg-white bg-opacity-80 backdrop-blur-sm border border-white border-opacity-60 p-4 rounded-full cursor-pointer hover:scale-110 transition-transform duration-300 animate-bounce shadow-lg">
+          <ChevronDown className="h-6 w-6 text-gray-700" />
         </div>
       </div>
 
@@ -144,6 +166,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+      
+      {/* Footer - Only on homepage */}
+      <Footer />
     </div>
   )
 }
