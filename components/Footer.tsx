@@ -56,10 +56,21 @@ export default function Footer() {
           <p className="text-gray-600">
             Your trip data is generated in real-time and not stored on our servers.
           </p>
-          <div className="flex items-center justify-center gap-1 text-gray-600">
-            <span>This project is <a href="https://github.com/jruttan1/TravelGenie" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors duration-200">open-source, we'd love a star</a></span>
-            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-            <span>! Built by @jruttan0, @justinpchow, Nathan Feng & Gary Yi  © 2025</span>
+          <div className="flex flex-col items-center justify-center text-gray-600 space-y-2">
+            <div className="flex items-center">
+              <span>This project is <a href="https://github.com/jruttan1/TravelGenie" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors duration-200">open-source, we'd love a star</a></span>
+              <Star className="h-4 w-4 text-yellow-500 fill-current ml-1" />
+              <span>!</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              <span>Built by</span>
+              <a href="https://x.com/jruttan0" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors duration-200">@jruttan0</a>,
+              <a href="https://x.com/justinpchow" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors duration-200">@justinpchow</a>,
+              <a href="https://github.com/nthnfng" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors duration-200">@NathanFeng</a>
+              <span>&</span>
+              <a href="https://github.com/Garyyi1234" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors duration-200">@garyyi</a>
+              <span>© 2025</span>
+            </div>
           </div>
         </div>
       </div>

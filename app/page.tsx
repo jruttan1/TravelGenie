@@ -47,16 +47,21 @@ export default function Home() {
   // Listen for scroll events
   useEffect(() => {
     const handleScroll = () => {
-      // If user scrolled more than 100 pixels, hide the indicator
-      if (window.scrollY > 100) {
+      const scrollY = window.scrollY
+      
+      // If user scrolled more than 50 pixels, hide the indicator (reduced threshold)
+      if (scrollY > 50) {
         setShowScrollIndicator(false)
       } else {
         setShowScrollIndicator(true)
       }
     }
 
-    // Add the scroll event listener
-    window.addEventListener('scroll', handleScroll)
+    // Add the scroll event listener with passive option for better performance
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    // Check initial scroll position
+    handleScroll()
 
     // Cleanup function - remove the listener when component unmounts
     return () => {
