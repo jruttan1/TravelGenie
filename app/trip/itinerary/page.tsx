@@ -76,9 +76,9 @@ export default function ItineraryPage() {
   
   const handleCreateICS = () =>
     {
-      
-      console.log("ICS Button pressed")
-      const zip = new JSZip();
+      try {
+        console.log("ICS Button pressed")
+        const zip = new JSZip();
   
       // Add your files here
       //zip.file("testfile.txt", "hi!");
@@ -98,19 +98,48 @@ export default function ItineraryPage() {
       for(let i = 0; i < itinerary.days.length; i++)//iterates through days in the whole trip
         {
           dayItin = itinerary.days[i];
+          
+          if (!dayItin) {
+            console.log("Day itinerary is null for day " + (i + 1));
+            continue;
+          }
 
-          console.log("NumEvents: " + dayItin.events.length)
+          console.log("NumEvents: " + (dayItin.events?.length || 0))
           //iterates through events in the day
-          for(let j = 0; j < getDayAllEvents(itinerary, i+1).length; j++)
+          try {
+            dayEvents = getDayAllEvents(itinerary, i+1);  //dayEvents is an array of events+meals
+            if (!dayEvents || !Array.isArray(dayEvents)) {
+              console.log("No events found for day " + (i + 1));
+              continue;
+            }
+            
+            for(let j = 0; j < dayEvents.length; j++)
             {
-              dayEvents = getDayAllEvents(itinerary, i+1);  //dayEvents is an array of events+meals
               specificEvent = dayEvents[j];
+              if (!specificEvent || !specificEvent.name) {
+                console.log("Invalid event at index " + j + " for day " + (i + 1));
+                continue;
+              }
+              
               console.log(specificEvent.name);
               
               //replace this line with the line to upload the ICS to the zip
-              zip.file(specificEvent.name+".ics",createCalendar(specificEvent.name, dayItin.date, specificEvent.startTime, specificEvent.endTime, specificEvent.address, specificEvent.description));
+              zip.file(
+                (specificEvent.name || `Event_${i+1}_${j+1}`) + ".ics",
+                createCalendar(
+                  specificEvent.name || `Event ${i+1}-${j+1}`, 
+                  dayItin.date || '', 
+                  specificEvent.startTime || '', 
+                  specificEvent.endTime || '', 
+                  specificEvent.address || '', 
+                  specificEvent.description || ''
+                )
+              );
             }
-            console.log("i: " + i)
+          } catch (error) {
+            console.error("Error processing events for day " + (i + 1) + ":", error);
+          }
+          console.log("i: " + i)
         }
 
       zip.generateAsync({ type: "blob" }).then((blob :Blob) =>
@@ -126,6 +155,10 @@ export default function ItineraryPage() {
         URL.revokeObjectURL(url);
       
         });
+      } catch (error) {
+        console.error("Error creating ICS files:", error);
+        alert("Failed to create calendar files. Please try again.");
+      }
   }
 
   // const handleCreatePDFExport = () =>

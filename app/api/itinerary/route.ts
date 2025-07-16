@@ -61,6 +61,62 @@ async function getCoordinates(location: string): Promise<{ lat: number; lng: num
   }
 }
 
+// Function to search Google Places API for accurate business coordinates
+async function searchPlaceDetails(placeName: string, address: string, destination: string): Promise<{ lat: number; lng: number; formatted_address?: string } | null> {
+  try {
+    // Add small delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // First try Places Text Search API for better accuracy
+    const searchQuery = `${placeName} ${address || destination}`;
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
+    
+    console.log(`🔍 Searching Places API for: "${searchQuery}"`);
+    
+    const response = await fetch(searchUrl);
+    const data = await response.json();
+    
+    if (data.status === 'OK' && data.results && data.results.length > 0) {
+      // Find the best match - prefer exact name matches
+      let bestMatch = data.results[0];
+      
+      // Look for exact or close name matches
+      const placeNameLower = placeName.toLowerCase();
+      for (const result of data.results) {
+        const resultNameLower = result.name.toLowerCase();
+        if (resultNameLower.includes(placeNameLower) || placeNameLower.includes(resultNameLower)) {
+          bestMatch = result;
+          break;
+        }
+      }
+      
+      const coordinates = {
+        lat: bestMatch.geometry.location.lat,
+        lng: bestMatch.geometry.location.lng,
+        formatted_address: bestMatch.formatted_address
+      };
+      
+      // Validate coordinates are reasonable
+      if (coordinates.lat >= -90 && coordinates.lat <= 90 && 
+          coordinates.lng >= -180 && coordinates.lng <= 180 &&
+          coordinates.lat !== 0 && coordinates.lng !== 0) {
+        console.log(`✅ Found place "${bestMatch.name}" at [${coordinates.lat}, ${coordinates.lng}]`);
+        return coordinates;
+      } else {
+        console.log(`⚠️ Invalid coordinates for "${bestMatch.name}": [${coordinates.lat}, ${coordinates.lng}]`);
+        return null;
+      }
+    }
+    
+    console.log(`⚠️ No Places API results for: ${searchQuery}, falling back to geocoding`);
+    return null;
+    
+  } catch (error) {
+    console.error(`❌ Places API search failed for "${placeName}":`, error);
+    return null;
+  }
+}
+
 // Function to determine start time based on wakeup preference
 function getStartTime(wakeupTime: string): string {
   switch (wakeupTime) {
@@ -666,6 +722,9 @@ function prioritizeSelectedPlaces(itinerary: any, selectedPlaces: PlaceDetails[]
 // Function to process the itinerary and calculate travel times/distances
 async function processItinerary(itinerary: any): Promise<ComprehensiveItinerary> {
   const processedDays: DayItinerary[] = []
+  let placesApiCallCount = 0
+
+  console.log('🗺️ Starting itinerary processing with enhanced coordinate lookup...')
 
   for (const day of itinerary.days) {
     const processedEvents: ItineraryEvent[] = []
@@ -674,18 +733,39 @@ async function processItinerary(itinerary: any): Promise<ComprehensiveItinerary>
       const event = day.events[i]
       const nextEvent = day.events[i + 1]
       
-      // Ensure coordinates are present
+      // Ensure coordinates are present - prioritize Places API over basic geocoding
       let coordinates = event.coordinates
-      if (!coordinates || !coordinates.lat || !coordinates.lng) {
-        console.log(`⚠️ Missing coordinates for event: ${event.name}, geocoding address: ${event.address}`)
-        const geocodedCoords = await getCoordinates(event.address)
-        if (geocodedCoords) {
-          coordinates = geocodedCoords
-          console.log(`✅ Geocoded coordinates for ${event.name}: ${coordinates.lat}, ${coordinates.lng}`)
+      let updatedAddress = event.address
+      
+      // Check if this is a selected place with existing good coordinates
+      const hasValidCoordinates = coordinates && coordinates.lat && coordinates.lng && 
+                                  coordinates.lat !== 0 && coordinates.lng !== 0
+      
+      if (!hasValidCoordinates) {
+        console.log(`⚠️ Missing coordinates for event: ${event.name}`)
+        
+        // First try Google Places API for accurate business coordinates
+        placesApiCallCount++
+        const placeDetails = await searchPlaceDetails(event.name, event.address, itinerary.destination)
+        if (placeDetails) {
+          coordinates = { lat: placeDetails.lat, lng: placeDetails.lng }
+          if (placeDetails.formatted_address) {
+            updatedAddress = placeDetails.formatted_address
+          }
+          console.log(`✅ Places API coordinates for ${event.name}: [${coordinates.lat}, ${coordinates.lng}]`)
         } else {
-          console.error(`❌ Failed to geocode coordinates for: ${event.name}`)
-          // Use a default coordinate (center of the destination) as fallback
-          coordinates = { lat: 0, lng: 0 }
+          // Fall back to basic geocoding if Places API fails
+          console.log(`🔄 Falling back to geocoding for: ${event.name}`)
+          const geocodedCoords = await getCoordinates(event.address || `${event.name}, ${itinerary.destination}`)
+          if (geocodedCoords) {
+            coordinates = geocodedCoords
+            console.log(`✅ Geocoded coordinates for ${event.name}: [${coordinates.lat}, ${coordinates.lng}]`)
+          } else {
+            console.error(`❌ Failed to get coordinates for: ${event.name}`)
+            // Use destination center as last resort fallback
+            const destinationCoords = await getCoordinates(itinerary.destination)
+            coordinates = destinationCoords || { lat: 0, lng: 0 }
+          }
         }
       }
       
@@ -693,14 +773,27 @@ async function processItinerary(itinerary: any): Promise<ComprehensiveItinerary>
       let travelDistanceToNext = undefined
       
       if (nextEvent) {
-        // Ensure next event also has coordinates
+        // Ensure next event also has coordinates using the same improved logic
         let nextCoordinates = nextEvent.coordinates
         if (!nextCoordinates || !nextCoordinates.lat || !nextCoordinates.lng) {
-          const geocodedNextCoords = await getCoordinates(nextEvent.address)
-          if (geocodedNextCoords) {
-            nextCoordinates = geocodedNextCoords
+          console.log(`⚠️ Next event missing coordinates: ${nextEvent.name}`)
+          
+          // Try Places API first for next event too
+          placesApiCallCount++
+          const nextPlaceDetails = await searchPlaceDetails(nextEvent.name, nextEvent.address, itinerary.destination)
+          if (nextPlaceDetails) {
+            nextCoordinates = { lat: nextPlaceDetails.lat, lng: nextPlaceDetails.lng }
+            console.log(`✅ Places API coordinates for next event ${nextEvent.name}: [${nextCoordinates.lat}, ${nextCoordinates.lng}]`)
           } else {
-            nextCoordinates = { lat: 0, lng: 0 }
+            // Fall back to geocoding
+            const geocodedNextCoords = await getCoordinates(nextEvent.address || `${nextEvent.name}, ${itinerary.destination}`)
+            if (geocodedNextCoords) {
+              nextCoordinates = geocodedNextCoords
+              console.log(`✅ Geocoded coordinates for next event ${nextEvent.name}: [${nextCoordinates.lat}, ${nextCoordinates.lng}]`)
+            } else {
+              const destinationCoords = await getCoordinates(itinerary.destination)
+              nextCoordinates = destinationCoords || { lat: 0, lng: 0 }
+            }
           }
         }
         
@@ -718,7 +811,7 @@ async function processItinerary(itinerary: any): Promise<ComprehensiveItinerary>
       processedEvents.push({
         id: event.id || `event-${day.day_number}-${i}`,
         name: event.name,
-        address: event.address,
+        address: updatedAddress, // Use the potentially updated address from Places API
         coordinates: coordinates,
         startTime: event.start_time,
         endTime: event.end_time,
@@ -751,6 +844,10 @@ async function processItinerary(itinerary: any): Promise<ComprehensiveItinerary>
       dailyBudgetBreakdown: day.daily_budget_breakdown
     })
   }
+
+  console.log(`🎯 Itinerary processing completed!`)
+  console.log(`📍 Made ${placesApiCallCount} Google Places API calls for accurate coordinates`)
+  console.log(`📅 Processed ${processedDays.length} days with enhanced location data`)
 
   return {
     id: `itinerary-${Date.now()}`,
