@@ -22,10 +22,7 @@ import {
 } from "@/lib/itinerary-utils"
 import {createCalendar} from "@/lib/createICS"
 import { Zip01Icon } from "hugeicons-react"
-
-
-var JSZip = require("jszip");//idk what this does
-var zip = new JSZip();
+import JSZip from "jszip"
 
 export default function ItineraryPage() {
   const [itinerary, setItinerary] = useState<ComprehensiveItinerary | null>(null)
@@ -359,12 +356,14 @@ export default function ItineraryPage() {
 
   const allEvents = [
     currentDayData.meals?.breakfast,
-    ...(currentDayData.events || []).filter(e => e.startTime < currentDayData.meals?.lunch?.startTime),
+    ...(currentDayData.events || []).filter(e => e && e.startTime && (!currentDayData.meals?.lunch?.startTime || e.startTime < currentDayData.meals.lunch.startTime)),
     currentDayData.meals?.lunch,
-    ...(currentDayData.events || []).filter(e => e.startTime >= currentDayData.meals?.lunch?.startTime && e.startTime < currentDayData.meals?.dinner?.startTime),
+    ...(currentDayData.events || []).filter(e => e && e.startTime && 
+      (!currentDayData.meals?.lunch?.startTime || e.startTime >= currentDayData.meals.lunch.startTime) && 
+      (!currentDayData.meals?.dinner?.startTime || e.startTime < currentDayData.meals.dinner.startTime)),
     currentDayData.meals?.dinner,
-    ...(currentDayData.events || []).filter(e => e.startTime >= currentDayData.meals?.dinner?.startTime)
-  ].filter(Boolean).sort((a, b) => a.startTime.localeCompare(b.startTime))
+    ...(currentDayData.events || []).filter(e => e && e.startTime && currentDayData.meals?.dinner?.startTime && e.startTime >= currentDayData.meals.dinner.startTime)
+  ].filter(Boolean).sort((a, b) => (a?.startTime || '').localeCompare(b?.startTime || ''))
 
   // The getTripEventsForICal function is available to use when you need it
   // Example: const tripEventsForICal = getTripEventsForICal(itinerary)

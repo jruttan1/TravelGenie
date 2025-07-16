@@ -395,15 +395,29 @@ body {
   box-shadow: none !important;
 }
 
-/* Enhanced popup animations */
+/* Enhanced popup animations - Fix positioning issue */
 .mapboxgl-popup {
-  animation: popupFadeIn 0.3s ease-out;
+  /* Hide popup initially until position is calculated */
+  visibility: hidden;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.2s ease-out;
+}
+
+.mapboxgl-popup.mapboxgl-popup-anchor-bottom,
+.mapboxgl-popup.mapboxgl-popup-anchor-top,
+.mapboxgl-popup.mapboxgl-popup-anchor-left,
+.mapboxgl-popup.mapboxgl-popup-anchor-right {
+  /* Show popup with smooth animation once position is set */
+  visibility: visible;
+  opacity: 1;
+  transform: scale(1);
 }
 
 @keyframes popupFadeIn {
   from {
     opacity: 0;
-    transform: scale(0.9) translateY(-10px);
+    transform: scale(0.8) translateY(-5px);
   }
   to {
     opacity: 1;
